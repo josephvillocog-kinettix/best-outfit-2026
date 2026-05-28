@@ -398,19 +398,33 @@ export default function TinderCards({
             >
               {/* Direct Picture with support for slow connection error previews */}
               {activeCandidate.photoUrl ? (
-                <img
-                  src={activeCandidate.photoUrl}
-                  alt={activeCandidate.name}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                  referrerPolicy="no-referrer"
-                  draggable={false}
-                  onError={(e) => {
-                    // Fallback if image fails to resolve or reaches rate limit
-                    e.currentTarget.style.display = "none";
-                    const sib = e.currentTarget.nextElementSibling as HTMLElement;
-                    if (sib) sib.style.display = "flex";
-                  }}
-                />
+                <div className="absolute inset-0 w-full h-full overflow-hidden flex items-center justify-center bg-slate-900">
+                  {/* Blurred background backdrop to fill empty space seamlessly */}
+                  <img
+                    src={activeCandidate.photoUrl}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover opacity-30 blur-xl scale-110 select-none pointer-events-none"
+                    referrerPolicy="no-referrer"
+                    draggable={false}
+                  />
+                  {/* Main image - uncropped (object-contain) */}
+                  <img
+                    src={activeCandidate.photoUrl}
+                    alt={activeCandidate.name}
+                    className="relative w-full h-full object-contain transition-transform duration-500 hover:scale-[1.03] z-10"
+                    referrerPolicy="no-referrer"
+                    draggable={false}
+                    onError={(e) => {
+                      // Fallback: hide the parent container and show the broken error div
+                      const parentNode = e.currentTarget.parentElement;
+                      if (parentNode) {
+                        parentNode.style.display = "none";
+                        const fallbackDiv = parentNode.nextElementSibling as HTMLElement;
+                        if (fallbackDiv) fallbackDiv.style.display = "flex";
+                      }
+                    }}
+                  />
+                </div>
               ) : null}
 
               {/* Premium Fallback/Alternative avatar visualization if photoUrl is broken or empty */}
