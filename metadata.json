@@ -1,0 +1,6 @@
+{
+  "name": "Best Outfit Voting",
+  "description": "A Hawaiian-themed mobile voting app with a tinder-style swipe layout to select the best outfit.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
