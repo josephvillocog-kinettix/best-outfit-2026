@@ -63,7 +63,7 @@ async function startServer() {
       const resolvedVoterName = voterName || "";
       const resolvedCandidateId = candidateId || "";
       const resolvedCandidateName = candidateName || name || "";
-      const votedCandidate = votedList && votedList.length > 0 ? votedList[0] : resolvedCandidateName;
+      const votedCandidate = votedList && votedList.length > 0 ? votedList.join(", ") : resolvedCandidateName;
 
       // Construct a URL with the query parameters to be extremely safe, 
       // as some legacy Google Apps Scripts read parameters from query params (e.parameter)

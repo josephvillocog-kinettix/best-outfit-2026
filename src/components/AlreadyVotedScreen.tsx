@@ -14,12 +14,19 @@ export default function AlreadyVotedScreen({
   allCandidates,
   onResetSession,
 }: AlreadyVotedScreenProps) {
-  // Try to find the candidate matched by ID or Name
-  const matchedCandidate = allCandidates.find(
-    (c) =>
-      c.id === voter.vote ||
-      c.name.toLowerCase() === voter.vote?.toLowerCase()
-  );
+  // Split voter.vote by comma, and find matching candidates
+  const voteSubstrings = voter.vote
+    ? voter.vote.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  const matchedCandidates = voteSubstrings.map((v) => {
+    const found = allCandidates.find(
+      (c) =>
+        c.id === v ||
+        c.name.toLowerCase() === v.toLowerCase()
+    );
+    return found || v; // Keep as string if it's a raw name not found in candidates list
+  });
 
   return (
     <motion.div
@@ -51,42 +58,56 @@ export default function AlreadyVotedScreen({
         {/* Matched / Show Voting Choice layout */}
         <div className="mt-6 text-left border-y border-white/10 py-5 space-y-3">
           <h4 className="text-xs font-display font-bold tracking-wider text-amber-200/80 uppercase">
-            🌺 YOUR CASTED SELECTION
+            🌺 YOUR CASTED SELECTIONS
           </h4>
 
-          {voter.vote ? (
-            matchedCandidate ? (
-              <div className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5 hover:border-white/10 transition-all">
-                <img
-                  src={matchedCandidate.photoUrl}
-                  alt={matchedCandidate.name}
-                  className="w-12 h-12 object-cover rounded-xl border border-white/20 shadow-md"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-bold truncate text-white">
-                    {matchedCandidate.name}
-                  </div>
-                 </div>
-                <div className="bg-emerald-500/10 border border-emerald-400/25 text-emerald-300 rounded-full p-2 flex items-center justify-center">
-                  <Heart className="w-4 h-4 fill-emerald-300 text-emerald-300" />
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5 hover:border-white/10 transition-all">
-                <div className="bg-amber-500/10 border border-amber-400/20 rounded-xl p-2">
-                  <Sparkles className="w-6 h-6 text-amber-300" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold truncate text-white">
-                    {voter.vote}
-                  </div>
-                  <div className="text-[10px] text-amber-400 font-mono">
-                    Custom Entry / Write-in
-                  </div>
-                </div>
-              </div>
-            )
+          {matchedCandidates.length > 0 ? (
+            <div className="space-y-2.5">
+              {matchedCandidates.map((item, index) => {
+                const isCandidateObj = typeof item !== "string";
+                if (isCandidateObj) {
+                  const cand = item as Candidate;
+                  return (
+                    <div key={cand.id} className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5 hover:border-white/10 transition-all">
+                      <img
+                        src={cand.photoUrl}
+                        alt={cand.name}
+                        className="w-12 h-12 object-cover rounded-xl border border-white/20 shadow-md"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-bold truncate text-white">
+                          {cand.name}
+                        </div>
+                        <div className="text-[10px] text-amber-400 font-mono">
+                          {cand.gender === "F" ? "Female Choice" : cand.gender === "M" ? "Male Choice" : "Candidate Selection"}
+                        </div>
+                      </div>
+                      <div className="bg-emerald-500/10 border border-emerald-400/25 text-emerald-300 rounded-full p-2 flex items-center justify-center">
+                        <Heart className="w-4 h-4 fill-emerald-300 text-emerald-300" />
+                      </div>
+                    </div>
+                  );
+                } else {
+                  const nameStr = item as string;
+                  return (
+                    <div key={index} className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5 hover:border-white/10 transition-all">
+                      <div className="bg-amber-500/10 border border-amber-400/20 rounded-xl p-2">
+                        <Sparkles className="w-6 h-6 text-amber-300" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold truncate text-white">
+                          {nameStr}
+                        </div>
+                        <div className="text-[10px] text-amber-400 font-mono">
+                          Custom Entry / Write-in
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+              })}
+            </div>
           ) : (
             <div className="flex items-center gap-2 text-xs text-orange-300/80 italic p-3 bg-orange-500/5 rounded-2xl border border-orange-500/10">
               <AlertCircle className="w-4 h-4 shrink-0" />

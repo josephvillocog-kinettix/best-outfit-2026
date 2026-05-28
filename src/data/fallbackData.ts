@@ -4,27 +4,32 @@ export const FALLBACK_CANDIDATES: Candidate[] = [
   {
     id: "cand-1",
     name: "Nalani Rivera",
-    photoUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=600" // Styled in retro summer look
+    photoUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=600", // Styled in retro summer look
+    gender: "F"
   },
   {
     id: "cand-2",
     name: "Keanu Vance",
-    photoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600" // Beach vibe summer attire
+    photoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600", // Beach vibe summer attire
+    gender: "M"
   },
   {
     id: "cand-3",
     name: "Leilani Kahale",
-    photoUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600" // Flower garland & beautiful smile
+    photoUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600", // Flower garland & beautiful smile
+    gender: "F"
   },
   {
     id: "cand-4",
     name: "Kai Takahashi",
-    photoUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=600" // Classic tropical shirt
+    photoUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=600", // Classic tropical shirt
+    gender: "M"
   },
   {
     id: "cand-5",
     name: "Malia Johnston",
-    photoUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=600" // Island wrap summer dress
+    photoUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=600", // Island wrap summer dress
+    gender: "F"
   }
 ];
 

@@ -29,6 +29,25 @@ export default function TinderCards({
   const [isExploding, setIsExploding] = useState(false);
   const [isContainerShaking, setIsContainerShaking] = useState(false);
 
+  // Setup dual category filter tags
+  const hasFemale = candidates.some((c) => (c.gender || "M") === "F");
+  const hasMale = candidates.some((c) => (c.gender || "M") === "M");
+
+  const [selectedGender, setSelectedGender] = useState<"F" | "M">("F");
+
+  // Keep chosen gender valid dynamically in sandboxed runs
+  useEffect(() => {
+    if (!hasFemale && hasMale) {
+      setSelectedGender("M");
+    } else if (hasFemale && !hasMale) {
+      setSelectedGender("F");
+    }
+  }, [hasFemale, hasMale]);
+
+  const filteredCandidates = candidates.filter(
+    (c) => (c.gender || "M") === selectedGender
+  );
+
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -169,36 +188,56 @@ export default function TinderCards({
 
   if (!candidates || candidates.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-center text-white/50 w-full">
+      <div className="flex flex-col items-center justify-center p-8 text-center text-white/50 w-full animate-pulse">
         <AlertCircle className="w-8 h-8 text-amber-300 mb-2" />
         <p className="text-sm">No nominee entries found.</p>
       </div>
     );
   }
 
-  const activeCandidate = candidates[currentIndex];
-  const isVoted = !!votedCandidates[activeCandidate.id];
+  const normalizedIndex = filteredCandidates.length > 0
+    ? currentIndex % filteredCandidates.length
+    : 0;
+
+  const activeCandidate = filteredCandidates.length > 0
+    ? filteredCandidates[normalizedIndex]
+    : null;
+
+  const isVoted = activeCandidate ? !!votedCandidates[activeCandidate.id] : false;
 
   const handleNext = () => {
     onClearError();
     setDirection("right");
-    setCurrentIndex((prev) => (prev + 1) % candidates.length);
+    if (filteredCandidates.length > 0) {
+      setCurrentIndex((prev) => (prev + 1) % filteredCandidates.length);
+    }
   };
 
   const handlePrev = () => {
     onClearError();
     setDirection("left");
-    setCurrentIndex((prev) => (prev - 1 + candidates.length) % candidates.length);
+    if (filteredCandidates.length > 0) {
+      setCurrentIndex((prev) => (prev - 1 + filteredCandidates.length) % filteredCandidates.length);
+    }
   };
 
   const handleToggleVote = () => {
     onClearError();
-    onMarkVote(activeCandidate.id, !isVoted);
+    if (activeCandidate) {
+      onMarkVote(activeCandidate.id, !isVoted);
+    }
   };
 
-  // Find which candidate is currently voted (if any)
-  const votedCandidateId = Object.entries(votedCandidates).find(([_, voted]) => voted)?.[0];
-  const votedCandidate = votedCandidateId ? candidates.find((c) => c.id === votedCandidateId) : null;
+  // Find which candidate is currently voted for in each category
+  const votedFemaleCandidate = candidates.find(
+    (c) => (c.gender || "M") === "F" && !!votedCandidates[c.id]
+  );
+  const votedMaleCandidate = candidates.find(
+    (c) => (c.gender || "M") === "M" && !!votedCandidates[c.id]
+  );
+
+  const votedCandidateCount = Object.keys(votedCandidates).filter((id) => votedCandidates[id]).length;
+  const votedCandidate = votedFemaleCandidate || votedMaleCandidate || null;
 
   // Animation variants for smooth horizontal sliding
   const slideVariants = {
@@ -239,131 +278,187 @@ export default function TinderCards({
           : { x: 0, scale: 1 }
       }
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="flex flex-col items-center justify-start gap-2 w-full flex-1 max-w-sm mx-auto z-10 relative overflow-hidden px-1"
+      className="flex flex-col items-center justify-start gap-1 w-full flex-1 max-w-sm mx-auto z-10 relative overflow-hidden px-1"
     >
       <canvas
         ref={canvasRef}
         className="absolute inset-0 pointer-events-none z-50 rounded-2xl"
       />
 
+      {/* Category Selection segmented tab bar */}
+      <div className="w-full grid grid-cols-2 gap-1.5 p-1 bg-white/5 border border-white/10 rounded-2xl mb-1.5 text-xs text-white">
+        <button
+          onClick={() => {
+            onClearError();
+            setSelectedGender("F");
+            setCurrentIndex(0);
+          }}
+          className={`py-2 px-1 rounded-xl font-display font-bold tracking-wide transition-all flex flex-col items-center justify-center gap-0.5 whitespace-nowrap cursor-pointer ${
+            selectedGender === "F"
+              ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md scale-[1.02]"
+              : "text-white/60 hover:text-white hover:bg-white/5"
+          }`}
+        >
+          <span>Female Nominees (F)</span>
+          {votedFemaleCandidate ? (
+            <span className="text-[9px] text-amber-200 font-sans font-medium max-w-[150px] truncate leading-none">
+              ★ {votedFemaleCandidate.name.split(" ")[0]}
+            </span>
+          ) : (
+            <span className="text-[8px] text-white/30 italic font-sans font-normal leading-none">Not selected</span>
+          )}
+        </button>
+        <button
+          onClick={() => {
+            onClearError();
+            setSelectedGender("M");
+            setCurrentIndex(0);
+          }}
+          className={`py-2 px-1 rounded-xl font-display font-bold tracking-wide transition-all flex flex-col items-center justify-center gap-0.5 whitespace-nowrap cursor-pointer ${
+            selectedGender === "M"
+              ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md scale-[1.02]"
+              : "text-white/60 hover:text-white hover:bg-white/5"
+          }`}
+        >
+          <span>Male Nominees (M)</span>
+          {votedMaleCandidate ? (
+            <span className="text-[9px] text-amber-200 font-sans font-medium max-w-[150px] truncate leading-none">
+              ★ {votedMaleCandidate.name.split(" ")[0]}
+            </span>
+          ) : (
+            <span className="text-[8px] text-white/30 italic font-sans font-normal leading-none">Not selected</span>
+          )}
+        </button>
+      </div>
+
       {/* Main Carousel Swipeable Card Window */}
-      <div className="relative w-full aspect-[4/5] max-h-[350px] sm:max-h-[380px] flex items-center justify-center select-none overflow-hidden rounded-2xl bg-slate-950/20 border border-white/10 shadow-inner">
-        <AnimatePresence initial={false} custom={direction} mode="popLayout">
-          <motion.div
-            key={activeCandidate.id}
-            custom={direction}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={1}
-            onDragEnd={(_, info) => {
-              if (info.offset.x > 50) {
-                handlePrev();
-              } else if (info.offset.x < -50) {
-                handleNext();
-              }
-            }}
-            className="absolute w-full h-full rounded-2xl overflow-hidden shadow-2xl flex flex-col justify-end cursor-grab active:cursor-grabbing touch-none bg-slate-900 border border-white/15"
-          >
-            {/* Direct Picture with support for slow connection error previews */}
-            {activeCandidate.photoUrl ? (
-              <img
-                src={activeCandidate.photoUrl}
-                alt={activeCandidate.name}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                referrerPolicy="no-referrer"
-                draggable={false}
-                onError={(e) => {
-                  // Fallback if image fails to resolve or reaches rate limit
-                  e.currentTarget.style.display = "none";
-                  const sib = e.currentTarget.nextElementSibling as HTMLElement;
-                  if (sib) sib.style.display = "flex";
-                }}
-              />
-            ) : null}
-
-            {/* Premium Fallback/Alternative avatar visualization if photoUrl is broken or empty */}
-            <div 
-              style={{ display: activeCandidate.photoUrl ? "none" : "flex" }}
-              className="absolute inset-0 bg-gradient-to-br from-slate-900 via-orange-950/30 to-slate-900 flex-col items-center justify-center p-6 text-center"
-            >
-              <div className="w-16 h-16 rounded-full bg-orange-500/10 flex items-center justify-center border border-orange-400/20 mb-3 animate-pulse">
-                <User className="w-8 h-8 text-orange-400" />
-              </div>
-              <p className="text-sm font-semibold text-white">{activeCandidate.name}</p>
-              <p className="text-xs text-orange-200/40 mt-1">Photo Loading / Private Direct Link</p>
-            </div>
-
-            {/* Gradient Overlay for aesthetic text visibility */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-black/25 pointer-events-none" />
-
-            {/* Absolute interactive Glowing Heart button inside the Card */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleToggleVote();
+      <div className="relative w-full aspect-[4/5] max-h-[300px] sm:max-h-[340px] flex items-center justify-center select-none overflow-hidden rounded-2xl bg-slate-950/20 border border-white/10 shadow-inner">
+        {filteredCandidates.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-8 text-center text-white/50 w-full min-h-[260px]">
+            <AlertCircle className="w-8 h-8 text-amber-300 mb-2" />
+            <p className="text-sm font-display">No entries found in this category.</p>
+          </div>
+        ) : activeCandidate ? (
+          <AnimatePresence initial={false} custom={direction} mode="popLayout">
+            <motion.div
+              key={activeCandidate.id}
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={1}
+              onDragEnd={(_, info) => {
+                if (info.offset.x > 50) {
+                  handlePrev();
+                } else if (info.offset.x < -50) {
+                  handleNext();
+                }
               }}
-              className={`absolute top-4 right-4 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl border cursor-pointer active:scale-90 ${
-                isVoted
-                  ? "bg-rose-500 text-white border-rose-400 animate-pulse scale-105"
-                  : "bg-black/40 text-white/90 border-white/20 hover:bg-black/60 hover:border-rose-400/50"
-              }`}
-              title={isVoted ? "Remove Choice" : "Vote Choice"}
+              className="absolute w-full h-full rounded-2xl overflow-hidden shadow-2xl flex flex-col justify-end cursor-grab active:cursor-grabbing touch-none bg-slate-900 border border-white/15"
             >
-              <Heart
-                className={`w-6 h-6 transition-transform duration-300 ${
-                  isVoted ? "fill-white scale-110" : "fill-transparent group-hover:scale-110"
-                }`}
-              />
-            </button>
+              {/* Direct Picture with support for slow connection error previews */}
+              {activeCandidate.photoUrl ? (
+                <img
+                  src={activeCandidate.photoUrl}
+                  alt={activeCandidate.name}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                  referrerPolicy="no-referrer"
+                  draggable={false}
+                  onError={(e) => {
+                    // Fallback if image fails to resolve or reaches rate limit
+                    e.currentTarget.style.display = "none";
+                    const sib = e.currentTarget.nextElementSibling as HTMLElement;
+                    if (sib) sib.style.display = "flex";
+                  }}
+                />
+              ) : null}
 
-            {/* Voted success badge */}
-            {isVoted && (
-              <div className="absolute top-4 left-4 bg-amber-400 text-slate-950 font-display font-bold px-3 py-1 rounded-full text-[10px] flex items-center gap-1 shadow-lg border border-white/20">
-                <Check className="w-3 h-3 stroke-[3]" />
-                <span>MY CHOICE</span>
+              {/* Premium Fallback/Alternative avatar visualization if photoUrl is broken or empty */}
+              <div 
+                style={{ display: activeCandidate.photoUrl ? "none" : "flex" }}
+                className="absolute inset-0 bg-gradient-to-br from-slate-900 via-orange-950/30 to-slate-900 flex-col items-center justify-center p-6 text-center"
+              >
+                <div className="w-14 h-14 rounded-full bg-orange-500/10 flex items-center justify-center border border-orange-400/20 mb-2 animate-pulse">
+                  <User className="w-7 h-7 text-orange-400" />
+                </div>
+                <p className="text-sm font-semibold text-white">{activeCandidate.name}</p>
+                <p className="text-xs text-orange-200/40 mt-1">Photo Loading...</p>
               </div>
-            )}
 
-            {/* Candidate Info Badge Label */}
-            <div className="p-4 text-left relative z-10 select-none">
-              <span className="text-[10px] font-display font-bold tracking-widest bg-orange-500/80 text-white rounded-full px-2.5 py-0.5 uppercase inline-block mb-1.5 shadow-sm">
-                Candidate Entry #{currentIndex + 1}
-              </span>
-              <h3 className="font-display font-bold text-xl text-white drop-shadow-md leading-tight">
-                {activeCandidate.name}
-              </h3>
-              <p className="text-[10px] text-amber-200/70 mt-0.5 font-sans">
-                Tap heart inside or click to vote • Swipe left/right to view entries
-              </p>
-            </div>
-          </motion.div>
-        </AnimatePresence>
+              {/* Gradient Overlay for aesthetic text visibility */}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-black/25 pointer-events-none" />
+
+              {/* Absolute interactive Glowing Heart button inside the Card */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleVote();
+                }}
+                className={`absolute top-4 right-4 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl border cursor-pointer active:scale-95 ${
+                  isVoted
+                    ? "bg-rose-500 text-white border-rose-400 scale-105"
+                    : "bg-black/40 text-white/90 border-white/20 hover:bg-black/60 hover:border-rose-400/50"
+                }`}
+                title={isVoted ? "Remove Choice" : "Vote Choice"}
+              >
+                <Heart
+                  className={`w-6 h-6 transition-transform duration-300 ${
+                    isVoted ? "fill-white scale-110" : "fill-transparent group-hover:scale-110"
+                  }`}
+                />
+              </button>
+
+              {/* Voted success badge */}
+              {isVoted && (
+                <div className="absolute top-4 left-4 bg-amber-400 text-slate-950 font-display font-bold px-3 py-1 rounded-full text-[10px] flex items-center gap-1 shadow-lg border border-white/20">
+                  <Check className="w-3 h-3 stroke-[3]" />
+                  <span>MY CHOICE</span>
+                </div>
+              )}
+
+              {/* Candidate Info Badge Label */}
+              <div className="p-4 text-left relative z-10 select-none">
+                <span className="text-[10px] font-display font-bold tracking-widest bg-orange-500/80 text-white rounded-full px-2.5 py-0.5 uppercase inline-block mb-1.5 shadow-sm">
+                  {selectedGender === "F" ? "Female" : "Male"} Nominee #{normalizedIndex + 1}
+                </span>
+                <h3 className="font-display font-bold text-lg text-white drop-shadow-md leading-tight">
+                  {activeCandidate.name}
+                </h3>
+                <p className="text-[10px] text-amber-200/70 mt-0.5 font-sans">
+                  Tap heart inside or click to vote • Swipe left/right to view entries
+                </p>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        ) : null}
       </div>
 
       {/* Simplified Indicator Dots & Carousel Arrows */}
-      <div className="flex items-center justify-between w-full mt-2 px-1">
+      <div className="flex items-center justify-between w-full mt-1.5 px-1">
         <button
           onClick={handlePrev}
-          className="p-2 border border-white/10 hover:border-orange-400/40 bg-white/5 text-orange-200 hover:text-white rounded-xl transition-all cursor-pointer shadow-md active:scale-95"
+          className="p-1 px-2 border border-white/10 hover:border-orange-400/40 bg-white/5 text-orange-200 hover:text-white rounded-xl transition-all cursor-pointer shadow-md active:scale-95 text-xs flex items-center justify-center"
           title="Previous Participant"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
 
-        {/* Dynamic progress bar dots */}
+        {/* Dynamic progress bar dots aligned to category */}
         <div className="flex items-center justify-center gap-1.5 max-w-[150px] overflow-hidden">
-          {candidates.map((cand, idx) => {
+          {filteredCandidates.map((cand, idx) => {
             const hasVotedThis = !!votedCandidates[cand.id];
             return (
               <button
                 key={cand.id}
-                onClick={() => setCurrentIndex(idx)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  idx === currentIndex
+                onClick={() => {
+                  onClearError();
+                  setCurrentIndex(idx);
+                }}
+                className={`w-2 h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                  idx === normalizedIndex
                     ? "bg-amber-400 w-4"
                     : hasVotedThis
                     ? "bg-rose-500"
@@ -376,17 +471,43 @@ export default function TinderCards({
 
         <button
           onClick={handleNext}
-          className="p-2 border border-white/10 hover:border-orange-400/40 bg-white/5 text-orange-200 hover:text-white rounded-xl transition-all cursor-pointer shadow-md active:scale-95"
+          className="p-1 px-2 border border-white/10 hover:border-orange-400/40 bg-white/5 text-orange-200 hover:text-white rounded-xl transition-all cursor-pointer shadow-md active:scale-95 text-xs flex items-center justify-center"
           title="Next Participant"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
+      {/* Selections Summary overview rack */}
+      <div className="w-full mt-2 p-2 rounded-xl bg-slate-900/40 border border-white/5 text-[10px] flex flex-col gap-1 text-white/70">
+        <div className="flex items-center justify-between">
+          <span>Female Nomination choice:</span>
+          {votedFemaleCandidate ? (
+            <span className="text-emerald-300 font-semibold flex items-center gap-1 text-[11px]">
+              <Check className="w-3 h-3 text-emerald-400 stroke-[3]" />
+              {votedFemaleCandidate.name}
+            </span>
+          ) : (
+            <span className="text-white/30 italic">None selected (swipe and tap heart)</span>
+          )}
+        </div>
+        <div className="flex items-center justify-between">
+          <span>Male Nomination choice:</span>
+          {votedMaleCandidate ? (
+            <span className="text-emerald-300 font-semibold flex items-center gap-1 text-[11px]">
+              <Check className="w-3 h-3 text-emerald-400 stroke-[3]" />
+              {votedMaleCandidate.name}
+            </span>
+          ) : (
+            <span className="text-white/30 italic">None selected (swipe and tap heart)</span>
+          )}
+        </div>
+      </div>
+
       {/* Primary Final Submit Button Panel */}
       <div className="w-full mt-2 pb-1 flex flex-col gap-2">
         {submitError && (
-          <div className="text-center py-2 text-xs text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-xl px-3 flex items-center justify-center gap-1.5">
+          <div className="text-center py-2 text-xs text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-xl px-3 flex items-center justify-center gap-1.5 animate-pulse">
             <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
             <span className="font-semibold text-left text-[11px] leading-tight text-rose-200">
               {submitError} (Change choice or tap to retry)
@@ -397,7 +518,7 @@ export default function TinderCards({
         {!votedCandidate ? (
           <div className="text-center py-2 text-xs text-orange-200/50 flex items-center justify-center gap-1.5 bg-slate-950/20 rounded-xl px-3 border border-dashed border-orange-400/10">
             <AlertCircle className="w-3.5 h-3.5 text-orange-400" />
-            <span>Select one favorite outfit to submit</span>
+            <span>Vote for at least one nominee to unlock posting</span>
           </div>
         ) : (
           <motion.button
@@ -406,11 +527,11 @@ export default function TinderCards({
             disabled={isSubmitting || isExploding}
             animate={isExploding ? { scale: 0, opacity: 0 } : { scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 350, damping: 25 }}
-            className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 font-display font-medium text-white text-base py-3 px-6 rounded-xl shadow-xl hover:shadow-orange-500/10 transition-all text-center flex items-center justify-center gap-2 font-bold cursor-pointer relative overflow-hidden disabled:opacity-80 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 font-display font-medium text-white text-sm py-2.5 px-6 rounded-xl shadow-xl hover:shadow-orange-500/10 transition-all text-center flex items-center justify-center gap-2 font-bold cursor-pointer relative overflow-hidden disabled:opacity-80 disabled:cursor-not-allowed"
           >
             {isSubmitting || isExploding ? (
               <>
-                <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
@@ -418,8 +539,8 @@ export default function TinderCards({
               </>
             ) : (
               <>
-                <Sparkles className="w-5 h-5 text-white" />
-                <span>Submit My Ballot</span>
+                <Sparkles className="w-4 h-4 text-white" />
+                <span>Submit My Ballot ({votedCandidateCount} {votedCandidateCount === 1 ? 'Vote' : 'Votes'})</span>
               </>
             )}
           </motion.button>

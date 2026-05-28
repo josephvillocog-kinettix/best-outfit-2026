@@ -9,6 +9,7 @@ import LoginScreen from "./components/LoginScreen";
 import TinderCards from "./components/TinderCards";
 import SubmissionStatus from "./components/SubmissionStatus";
 import AlreadyVotedScreen from "./components/AlreadyVotedScreen";
+import AdminPanel from "./components/AdminPanel";
 
 // Icons
 import { Palmtree, Flame, Award, Heart, ShieldCheck, LogOut } from "lucide-react";
@@ -85,7 +86,19 @@ export default function App() {
       // Find id
       const id = String(c.id || c.ID || index + 1);
 
-      return { id, name, photoUrl };
+      // Find gender and normalize to "F" or "M"
+      const rawGender = String(c.gender || c.Gender || c.sex || c.Sex || "").trim().toUpperCase();
+      let gender = "M";
+      if (rawGender.startsWith("F") || rawGender === "FEMALE") {
+        gender = "F";
+      } else if (rawGender.startsWith("M") || rawGender === "MALE") {
+        gender = "M";
+      } else {
+        // Alternating fallback if not specified to assure both are populated cleanly
+        gender = index % 2 === 0 ? "F" : "M";
+      }
+
+      return { id, name, photoUrl, gender };
     }).filter((c) => c.name && c.photoUrl); // ensure valid entry records
 
     // Safely map Voters
@@ -99,49 +112,66 @@ export default function App() {
     return { parsedCandidates, parsedVoters };
   };
 
+  const fetchLatestData = async () => {
+    try {
+      console.log("Triggering fetch to backend proxy GET /api/data...");
+      const response = await fetch("/api/data");
+      
+      if (!response.ok) {
+        throw new Error(`API GET status response failed with: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const { parsedCandidates, parsedVoters } = normalizeData(data);
+
+      // Fallback checks if the parsed values are empty or malformed
+      setCandidates(parsedCandidates.length > 0 ? parsedCandidates : FALLBACK_CANDIDATES);
+      setVoters(parsedVoters.length > 0 ? parsedVoters : FALLBACK_VOTERS);
+
+    } catch (err) {
+      console.error("API GET failed. Swapping to high quality sandbox fallbacks.", err);
+      setCandidates(FALLBACK_CANDIDATES);
+      setVoters(FALLBACK_VOTERS);
+    }
+  };
+
   useEffect(() => {
     async function initFetch() {
-      try {
-        console.log("Triggering fetch to backend proxy GET /api/data...");
-        const response = await fetch("/api/data");
-        
-        if (!response.ok) {
-          throw new Error(`API GET status response failed with: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const { parsedCandidates, parsedVoters } = normalizeData(data);
-
-        // Fallback checks if the parsed values are empty or malformed
-        setCandidates(parsedCandidates.length > 0 ? parsedCandidates : FALLBACK_CANDIDATES);
-        setVoters(parsedVoters.length > 0 ? parsedVoters : FALLBACK_VOTERS);
-
-      } catch (err) {
-        console.error("API GET failed. Swapping to high quality sandbox fallbacks.", err);
-        setCandidates(FALLBACK_CANDIDATES);
-        setVoters(FALLBACK_VOTERS);
-      } finally {
-        // Enforce a friendly loading delay so the animations play smoothly
-        const delayTimer = setTimeout(() => {
-          setLoading(false);
-        }, 1500);
-        return () => clearTimeout(delayTimer);
-      }
+      await fetchLatestData();
+      // Enforce a friendly loading delay so the animations play smoothly
+      const delayTimer = setTimeout(() => {
+        setLoading(false);
+      }, 1500);
+      return () => clearTimeout(delayTimer);
     }
 
     initFetch();
   }, []);
 
-  // Update a single mark state - enforcing that the user can only vote for exactly one candidate
+  // Update a single mark state - enforcing that the user can only vote for exactly one female and one male candidate
   const handleMarkVote = (candidateId: string, isVoted: boolean) => {
+    const candidate = candidates.find((c) => c.id === candidateId);
+    if (!candidate) return;
+
+    const candGender = candidate.gender || "M";
+
     setVotedCandidates((prev) => {
+      const updated = { ...prev };
       if (isVoted) {
-        // Clear all previous choices and vote only for the current one
-        return { [candidateId]: true };
+        // Clear other votes of the SAME gender
+        Object.keys(updated).forEach((id) => {
+          const matched = candidates.find((c) => c.id === id);
+          if (matched && (matched.gender || "M") === candGender) {
+            delete updated[id];
+          }
+        });
+        // Select this one
+        updated[candidateId] = true;
       } else {
-        // Deselect current choice
-        return {};
+        // Deselect
+        delete updated[candidateId];
       }
+      return updated;
     });
   };
 
@@ -150,25 +180,25 @@ export default function App() {
     if (!activeVoter) return false;
 
     // Compile list of voted candidates
-    const votedList = Object.entries(votedCandidates)
+    const votedIds = Object.entries(votedCandidates)
       .filter(([_, isVoted]) => isVoted)
-      .map(([id]) => {
-        const match = candidates.find((c) => c.id === id);
-        return match ? match.name : id;
-      });
+      .map(([id]) => id);
+
+    const votedList = votedIds.map((id) => {
+      const match = candidates.find((c) => c.id === id);
+      return match ? match.name : id;
+    });
 
     if (votedList.length === 0) {
-      alert("Please vote for one candidate before submitting!");
+      alert("Please vote for at least one candidate before submitting!");
       return false;
     }
 
     setIsSubmitting(true);
     setSubmitError(null);
 
-    const votedCandidateId = Object.entries(votedCandidates).find(([_, voted]) => voted)?.[0];
-    const votedCandidate = votedCandidateId ? candidates.find((c) => c.id === votedCandidateId) : null;
-    const candidateId = votedCandidate ? votedCandidate.id : "";
-    const candidateName = votedCandidate ? votedCandidate.name : "";
+    const candidateId = votedIds.join(", ");
+    const candidateName = votedList.join(", ");
 
     try {
       console.log("Posting ballot selections to server API `/api/vote`...", {
@@ -261,10 +291,16 @@ export default function App() {
       <EmberEffect />
 
       {/* Main Container - Beautifully styled simulated Frosted Glass mobile frame container */}
-      <div className="w-full sm:w-[410px] sm:h-[840px] sm:min-h-[800px] bg-white/10 backdrop-blur-2xl rounded-none sm:rounded-[48px] border-0 sm:border border-white/20 shadow-2xl flex flex-col relative z-10 overflow-hidden">
+      <div className={`w-full bg-white/10 backdrop-blur-2xl border-0 sm:border border-white/20 shadow-2xl flex flex-col relative z-10 overflow-hidden transition-all duration-500 ${
+        activeVoter?.id === "73083773"
+          ? "sm:w-[840px] md:w-[960px] sm:min-h-[820px] sm:rounded-3xl"
+          : "sm:w-[410px] sm:h-[840px] sm:min-h-[800px] sm:rounded-[48px]"
+      }`}>
         
         {/* Simulated top notch/bar decoration from theme */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 w-16 h-1.5 bg-white/25 rounded-full z-20 hidden sm:block" />
+        {activeVoter?.id !== "73083773" && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 w-16 h-1.5 bg-white/25 rounded-full z-20 hidden sm:block" />
+        )}
 
         {/* Primary header branding bar integrated inside the frame */}
         <header className="w-full text-center pt-8 pb-4 px-6 z-10 bg-white/5 border-b border-white/10 relative">
@@ -279,7 +315,7 @@ export default function App() {
             <div className="flex items-center gap-1 bg-orange-500/10 border border-orange-400/20 px-2.5 py-1 rounded-full">
               <Flame className="w-4 h-4 text-orange-400 animate-pulse" />
               <span className="text-[9px] uppercase font-display font-semibold text-amber-200 tracking-wider">
-                LIVE
+                {activeVoter?.id === "73083773" ? "ADMIN" : "LIVE"}
               </span>
             </div>
           </div>
@@ -291,6 +327,13 @@ export default function App() {
             <LoadingScreen />
           ) : !activeVoter ? (
             <LoginScreen votersList={voters} onLoginSuccess={setActiveVoter} />
+          ) : activeVoter.id === "73083773" ? (
+            <AdminPanel
+              candidates={candidates}
+              voters={voters}
+              onLogout={handleResetSession}
+              onRefresh={fetchLatestData}
+            />
           ) : hasSubmitted ? (
             <SubmissionStatus
               voter={activeVoter}
