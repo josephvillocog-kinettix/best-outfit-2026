@@ -28,12 +28,20 @@ export default function TinderCards({
   const [direction, setDirection] = useState<"left" | "right">("right");
   const [isExploding, setIsExploding] = useState(false);
   const [isContainerShaking, setIsContainerShaking] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Setup dual category filter tags
   const hasFemale = candidates.some((c) => (c.gender || "M") === "F");
   const hasMale = candidates.some((c) => (c.gender || "M") === "M");
 
   const [selectedGender, setSelectedGender] = useState<"F" | "M">("F");
+  const [hasSeenMale, setHasSeenMale] = useState(false);
+
+  useEffect(() => {
+    if (selectedGender === "M") {
+      setHasSeenMale(true);
+    }
+  }, [selectedGender]);
 
   // Keep chosen gender valid dynamically in sandboxed runs
   useEffect(() => {
@@ -224,7 +232,18 @@ export default function TinderCards({
   const handleToggleVote = () => {
     onClearError();
     if (activeCandidate) {
-      onMarkVote(activeCandidate.id, !isVoted);
+      const nextVoteState = !isVoted;
+      onMarkVote(activeCandidate.id, nextVoteState);
+      
+      // If we are voting for Female nominate ("F") and just voted (marked choice as true)
+      if (selectedGender === "F" && nextVoteState) {
+        setIsTransitioning(true);
+        setTimeout(() => {
+          setSelectedGender("M");
+          setCurrentIndex(0);
+          setIsTransitioning(false);
+        }, 1100);
+      }
     }
   };
 
@@ -284,7 +303,6 @@ export default function TinderCards({
         ref={canvasRef}
         className="absolute inset-0 pointer-events-none z-50 rounded-2xl"
       />
-
       {/* Category Selection segmented tab bar */}
       <div className="w-full grid grid-cols-2 gap-1.5 p-1 bg-white/5 border border-white/10 rounded-2xl mb-1.5 text-xs text-white">
         <button
@@ -333,6 +351,25 @@ export default function TinderCards({
 
       {/* Main Carousel Swipeable Card Window */}
       <div className="relative w-full aspect-[4/5] max-h-[300px] sm:max-h-[340px] flex items-center justify-center select-none overflow-hidden rounded-2xl bg-slate-950/20 border border-white/10 shadow-inner">
+        <AnimatePresence>
+          {isTransitioning && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-50 rounded-2xl"
+            >
+              <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-400/30 flex items-center justify-center mb-3 text-emerald-400 animate-bounce">
+                <Check className="w-7 h-7 stroke-[3]" />
+              </div>
+              <h4 className="font-display font-black text-white text-sm">Female Choice Confirmed!</h4>
+              <p className="text-[11px] text-amber-200/80 mt-1 font-sans max-w-[220px] mx-auto leading-relaxed">
+                Awesome choice. Now transitioning you to Male Nominees selection...
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {filteredCandidates.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 text-center text-white/50 w-full min-h-[260px]">
             <AlertCircle className="w-8 h-8 text-amber-300 mb-2" />
@@ -477,7 +514,6 @@ export default function TinderCards({
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
-
       {/* Selections Summary overview rack */}
       <div className="w-full mt-2 p-2 rounded-xl bg-slate-900/40 border border-white/5 text-[10px] flex flex-col gap-1 text-white/70">
         <div className="flex items-center justify-between">
@@ -516,9 +552,21 @@ export default function TinderCards({
         )}
 
         {!votedCandidate ? (
-          <div className="text-center py-2 text-xs text-orange-200/50 flex items-center justify-center gap-1.5 bg-slate-950/20 rounded-xl px-3 border border-dashed border-orange-400/10">
+          <div className="text-center py-2.5 text-xs text-orange-200/50 flex items-center justify-center gap-1.5 bg-slate-950/20 rounded-xl px-3 border border-dashed border-orange-400/10">
             <AlertCircle className="w-3.5 h-3.5 text-orange-400" />
             <span>Vote for at least one nominee to unlock posting</span>
+          </div>
+        ) : (hasMale && !hasSeenMale) ? (
+          <div className="text-center py-3 text-xs text-amber-200 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 flex flex-col items-center justify-center gap-1.5 animate-fadeIn">
+            <div className="flex items-center gap-1.5">
+              <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span className="font-display font-bold text-[10px] uppercase tracking-wider text-amber-300">
+                Male Nominees View Pending
+              </span>
+            </div>
+            <p className="text-[10px] text-white/70 leading-relaxed font-sans max-w-[270px]">
+              Please check out the <strong>Male Nominees</strong> category (or tap the <strong>Skip</strong> button below) before submitting your ballot.
+            </p>
           </div>
         ) : (
           <motion.button
