@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Palmtree, Compass } from "lucide-react";
 
 export default function LoadingScreen() {
   const [flavorText, setFlavorText] = useState("Gathering tropical outfits...");
@@ -26,17 +25,18 @@ export default function LoadingScreen() {
     <div className="flex flex-col items-center justify-center w-full text-white text-center flex-1 py-12">
       <div className="relative mb-8">
         {/* Glowing radial backplate */}
-        <div className="absolute inset-x-[-30px] inset-y-[-30px] rounded-full bg-orange-500/20 blur-xl animate-pulse" />
+        <div className="absolute inset-x-[-35px] inset-y-[-35px] rounded-full bg-orange-500/25 blur-xl animate-pulse pointer-events-none" />
         
-        {/* Rotating outer compass ring */}
-        <div className="animate-spin duration-10000 ease-linear">
-          <Compass className="w-24 h-24 text-amber-300 stroke-[1.25]" />
-        </div>
-        
-        {/* Center dancing Palm Tree icon */}
-        <div className="absolute inset-0 flex items-center justify-center animate-bounce">
-          <Palmtree className="w-10 h-10 text-emerald-400" />
-        </div>
+        {/* Customized loaded brand logo image */}
+        <img
+          src="/assets/Asset_10.png"
+          alt="Kinettix Outing Logo"
+          className="w-28 h-28 object-contain relative z-10 animate-bounce cursor-default drop-shadow-[0_8px_16px_rgba(251,146,60,0.25)]"
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = "/assets/asset_10.png";
+          }}
+        />
       </div>
 
       <h1 className="font-script text-5xl md:text-6xl text-amber-200 drop-shadow-lg mb-2">

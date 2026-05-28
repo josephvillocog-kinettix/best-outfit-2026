@@ -7,6 +7,7 @@ export interface Candidate {
 export interface Voter {
   id: string;
   name: string;
+  vote?: string;
 }
 
 export interface VoteState {

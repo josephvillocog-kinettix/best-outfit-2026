@@ -33,26 +33,19 @@ export default function SubmissionStatus({
           <CheckCircle2 className="w-12 h-12 text-emerald-400" />
         </div>
 
-        <h2 className="font-script text-5xl text-amber-200 mb-1 drop-shadow-md">
-          Hello!
-        </h2>
         <h3 className="font-display font-bold text-xl text-white tracking-wide uppercase">
-          BALLOT TRANSMITTED
+          VOTE CASTED!
         </h3>
         <p className="text-sm text-emerald-100/70 mt-2 font-sans max-w-xs mx-auto leading-relaxed">
-          Hi, <span className="text-amber-200 font-bold">{voter.name}</span>! Your outfit selections have been securely processed.
+          Hi, <span className="text-amber-200 font-bold">{voter.name}</span>! Your selection have been securely processed.
         </p>
 
-        {message && (
-          <div className="bg-white/5 border border-white/10 text-slate-300 text-xs py-2 px-3 rounded-xl mt-3 inline-block font-mono max-w-sm truncate">
-            Response: {message}
-          </div>
-        )}
+  
 
         {/* Selected List Confirmation */}
         <div className="mt-6 text-left border-y border-white/10 py-5 space-y-3">
           <h4 className="text-xs font-display font-bold tracking-wider text-amber-200/80 uppercase">
-            🌺 Outfits You Supported
+            🌺 You voted for
           </h4>
           
           <div className="space-y-2.5 max-h-[160px] overflow-y-auto pr-1">
@@ -82,16 +75,6 @@ export default function SubmissionStatus({
             )}
           </div>
         </div>
-
-        {/* Sign out state transition button */}
-        <button
-          onClick={onResetSession}
-          className="w-full mt-6 bg-slate-900/60 hover:bg-slate-900 border border-white/15 hover:border-amber-400/30 font-display font-semibold py-3 px-6 rounded-xl hover:text-amber-200 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer"
-        >
-          <LogOut className="w-4 h-4 shrink-0 text-orange-400" />
-          <span>Revise ballot / Vote with another account</span>
-        </button>
-
       </div>
     </div>
   );

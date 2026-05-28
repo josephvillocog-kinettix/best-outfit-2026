@@ -51,32 +51,64 @@ async function startServer() {
   // API Route - Submit vote (doPost proxy)
   app.post("/api/vote", async (req, res) => {
     try {
-      const { id, name } = req.body;
-      console.log(`Submitting vote payload: id=${id}, name=${name}`);
+      const { id, name, candidateId, candidateName, voterId, voterName, votedList } = req.body;
+      console.log(`Submitting vote payload: id (voterId)=${id}, name (candidateName)=${name}, voterId=${voterId}, voterName=${voterName}`);
 
       if (!id || !name) {
-        return res.status(400).json({ error: "Missing required fields: id and name" });
+        return res.status(400).json({ error: "Missing required fields: id (voter id) and/or name (candidate name)" });
       }
 
-      // Construct a URL with the query parameters to be extremely safe, 
-      // as many Google Apps Scripts read parameters from query params (e.parameter)
-      const postUrl = new URL(GOOGLE_SCRIPT_URL);
-      postUrl.searchParams.append("id", id);
-      postUrl.searchParams.append("name", name);
+      // We resolve voter ID/Name and candidate ID/Name for safe and redundant delivery
+      const resolvedVoterId = voterId || id || "";
+      const resolvedVoterName = voterName || "";
+      const resolvedCandidateId = candidateId || "";
+      const resolvedCandidateName = candidateName || name || "";
+      const votedCandidate = votedList && votedList.length > 0 ? votedList[0] : resolvedCandidateName;
 
-      // Perform POST request. We support standard form data payload too in case e.postData.contents is read.
+      // Construct a URL with the query parameters to be extremely safe, 
+      // as some legacy Google Apps Scripts read parameters from query params (e.parameter)
+      const postUrl = new URL(GOOGLE_SCRIPT_URL);
+      
+      // Map id to voter's ID, and name to candidate's name as instructed
+      postUrl.searchParams.append("id", resolvedVoterId);
+      postUrl.searchParams.append("name", resolvedCandidateName);
+      postUrl.searchParams.append("voterId", resolvedVoterId);
+      postUrl.searchParams.append("voterName", resolvedVoterName);
+      
+      // Selection values for legacy parameter names and fallbacks
+      postUrl.searchParams.append("vote", votedCandidate);
+      postUrl.searchParams.append("candidate", votedCandidate);
+      postUrl.searchParams.append("candidateId", resolvedCandidateId);
+      postUrl.searchParams.append("candidateName", resolvedCandidateName);
+
+      // Build a comprehensive, robust JSON payload as requested: "make sure id and name is passed as parameter in json format"
+      // Map 'id' to voter's ID and 'name' to candidate's name
+      const jsonPayload = {
+        id: resolvedVoterId,         // id is for the voter's id
+        name: resolvedCandidateName, // name is for the candidate's name
+        candidateId: resolvedCandidateId,
+        candidateName: resolvedCandidateName,
+        voterId: resolvedVoterId,
+        voterName: resolvedVoterName,
+        votedList: votedList || [resolvedCandidateName],
+        vote: votedCandidate,
+        candidate: votedCandidate,
+        votedCandidate: votedCandidate
+      };
+
+      console.log("Forwarding POST to Google Script as JSON body:", JSON.stringify(jsonPayload));
+
       const response = await fetch(postUrl.toString(), {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Type": "application/json",
           "Accept": "application/json"
         },
-        body: new URLSearchParams({ id, name }).toString()
+        body: JSON.stringify(jsonPayload)
       });
 
       console.log(`Google Script POST returned status: ${response.status}`);
 
-      // Google Script can return 200 or redirection. Fetch with automatic follow handles normal flow.
       let resultText = "";
       try {
         resultText = await response.text();

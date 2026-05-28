@@ -8,6 +8,7 @@ import LoadingScreen from "./components/LoadingScreen";
 import LoginScreen from "./components/LoginScreen";
 import TinderCards from "./components/TinderCards";
 import SubmissionStatus from "./components/SubmissionStatus";
+import AlreadyVotedScreen from "./components/AlreadyVotedScreen";
 
 // Icons
 import { Palmtree, Flame, Award, Heart, ShieldCheck, LogOut } from "lucide-react";
@@ -23,6 +24,7 @@ export default function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string>("");
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Helper to convert Google Drive share links into direct raw image render URLs
   const convertDriveUrl = (url: string): string => {
@@ -90,7 +92,8 @@ export default function App() {
     const parsedVoters: Voter[] = rawVoters.map((v: any, index: number) => {
       const id = String(v.id || v.ID || v.voterId || "");
       const name = v.name || v.Name || v.voterName || `Voter ${id || index + 1}`;
-      return { id, name };
+      const vote = v.vote ?? v.Vote ?? v.voted ?? v.votedCandidate ?? v.candidate ?? v.voted_candidate ?? "";
+      return { id, name, vote: vote ? String(vote).trim() : undefined };
     }).filter((v) => v.id);
 
     return { parsedCandidates, parsedVoters };
@@ -143,8 +146,8 @@ export default function App() {
   };
 
   // Submit the selected votes
-  const handleSubmitVote = async () => {
-    if (!activeVoter) return;
+  const handleSubmitVote = async (): Promise<boolean> => {
+    if (!activeVoter) return false;
 
     // Compile list of voted candidates
     const votedList = Object.entries(votedCandidates)
@@ -156,24 +159,34 @@ export default function App() {
 
     if (votedList.length === 0) {
       alert("Please vote for one candidate before submitting!");
-      return;
+      return false;
     }
 
     setIsSubmitting(true);
+    setSubmitError(null);
+
+    const votedCandidateId = Object.entries(votedCandidates).find(([_, voted]) => voted)?.[0];
+    const votedCandidate = votedCandidateId ? candidates.find((c) => c.id === votedCandidateId) : null;
+    const candidateId = votedCandidate ? votedCandidate.id : "";
+    const candidateName = votedCandidate ? votedCandidate.name : "";
+
     try {
       console.log("Posting ballot selections to server API `/api/vote`...", {
-        id: activeVoter.id,
-        name: activeVoter.name,
-        votedCandidates: votedList,
+        voterId: activeVoter.id,
+        voterName: activeVoter.name,
+        candidateId,
+        candidateName,
       });
 
-      // Construct payload. We satisfy the strict requirement: "pass the id and name".
-      // We pass the voter id and voter name as requested. We can also include voted choices 
-      // in the payload, ensuring backend has maximum possible details.
+      // Pass the voter's ID as 'id' and the candidate's name as 'name' parameters in json format as requested.
       const payloadBody = {
-        id: activeVoter.id,
-        name: activeVoter.name,
-        votedList, // helper context
+        id: activeVoter.id,           // voter's id
+        name: candidateName,          // candidate's name
+        candidateId,                  // explicit candidate id
+        candidateName,                // explicit candidate name
+        voterId: activeVoter.id,      // voter's id
+        voterName: activeVoter.name,  // voter's name
+        votedList,
       };
 
       const res = await fetch("/api/vote", {
@@ -187,23 +200,39 @@ export default function App() {
       const result = await res.json();
       console.log("Post submission server result:", result);
 
+      const completedVoteValue = candidateName || candidateId;
+
       if (res.ok && result.success) {
         setSubmitMessage(result.data || "Vote registered successfully!");
-        setHasSubmitted(true);
+        if (completedVoteValue) {
+          setActiveVoter((prev) => (prev ? { ...prev, vote: completedVoteValue } : null));
+          setVoters((prevList) =>
+            prevList.map((v) =>
+              v.id === activeVoter.id ? { ...v, vote: completedVoteValue } : v
+            )
+          );
+        }
+        return true;
       } else {
-        // Even if doPost doesn't respond with 200 (common redirects issue on sheets), 
-        // let's record it gracefully for user satisfaction.
-        setSubmitMessage("Ballot recorded successfully.");
-        setHasSubmitted(true);
+        // If the server rejected it or did not succeed
+        const errMsg = result.data || result.error || "The server/script rejected the submission. Ensure your ID key is registered.";
+        throw new Error(errMsg);
       }
     } catch (err: any) {
       console.error("Ballot posting failed", err);
-      // Fallback for user experience so they are never stuck
-      setSubmitMessage(`Vote processed locally! (${err.message || "Network issue"})`);
-      setHasSubmitted(true);
+      setSubmitError(err.message || "Failed to submit ballot due to network/server issue.");
+      return false;
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleExplosionComplete = () => {
+    setHasSubmitted(true);
+  };
+
+  const handleClearError = () => {
+    setSubmitError(null);
   };
 
   // End active session to allow user to vote with another mock/regular ID immediately
@@ -211,6 +240,7 @@ export default function App() {
     setActiveVoter(null);
     setVotedCandidates({});
     setHasSubmitted(false);
+    setSubmitError(null);
   };
 
   return (
@@ -271,6 +301,12 @@ export default function App() {
               onResetSession={handleResetSession}
               message={submitMessage}
             />
+          ) : activeVoter.vote ? (
+            <AlreadyVotedScreen
+              voter={activeVoter}
+              allCandidates={candidates}
+              onResetSession={handleResetSession}
+            />
           ) : (
             /* Active Tinder card stack screen */
             <div className="w-full flex flex-col flex-1">
@@ -307,7 +343,10 @@ export default function App() {
                 votedCandidates={votedCandidates}
                 onMarkVote={handleMarkVote}
                 onSubmitVote={handleSubmitVote}
+                onExplosionComplete={handleExplosionComplete}
+                onClearError={handleClearError}
                 isSubmitting={isSubmitting}
+                submitError={submitError}
               />
             </div>
           )}

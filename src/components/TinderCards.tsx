@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Candidate } from "../types";
 import { Heart, Check, Sparkles, AlertCircle, ChevronLeft, ChevronRight, User } from "lucide-react";
@@ -7,8 +7,11 @@ interface TinderCardsProps {
   candidates: Candidate[];
   votedCandidates: Record<string, boolean>;
   onMarkVote: (candidateId: string, isVoted: boolean) => void;
-  onSubmitVote: () => void;
+  onSubmitVote: () => Promise<boolean>;
+  onExplosionComplete: () => void;
+  onClearError: () => void;
   isSubmitting: boolean;
+  submitError: string | null;
 }
 
 export default function TinderCards({
@@ -16,10 +19,153 @@ export default function TinderCards({
   votedCandidates,
   onMarkVote,
   onSubmitVote,
+  onExplosionComplete,
+  onClearError,
   isSubmitting,
+  submitError,
 }: TinderCardsProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<"left" | "right">("right");
+  const [isExploding, setIsExploding] = useState(false);
+  const [isContainerShaking, setIsContainerShaking] = useState(false);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const particlesRef = useRef<any[]>([]);
+
+  // Clean up animation frames on unmount
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
+
+  const startEmberExplosion = (targetX: number, targetY: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const container = containerRef.current;
+    if (container) {
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+    } else {
+      canvas.width = 380;
+      canvas.height = 600;
+    }
+
+    const particles: any[] = [];
+    const colors = [
+      "rgba(249, 115, 22, ",  // Brand orange
+      "rgba(245, 158, 11, ",  // Brand amber
+      "rgba(239, 68, 68, ",   // Lava red
+      "rgba(253, 224, 71, ",  // Sunflower yellow
+      "rgba(255, 255, 255, ", // Bright spark white
+    ];
+
+    // Spawn 80 explosive warm ember particles
+    for (let i = 0; i < 80; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 2.5 + Math.random() * 9.0;
+      const colorBase = colors[Math.floor(Math.random() * colors.length)];
+      particles.push({
+        x: targetX,
+        y: targetY,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        radius: 1 + Math.random() * 3.5,
+        colorBase,
+        alpha: 1.0,
+        decay: 0.012 + Math.random() * 0.018,
+        gravity: -0.07, // Floating upward draft
+        wind: (Math.random() - 0.5) * 0.25,
+      });
+    }
+
+    particlesRef.current = particles;
+
+    const tick = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const activeParticles = particlesRef.current;
+
+      for (let i = activeParticles.length - 1; i >= 0; i--) {
+        const p = activeParticles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Apply drag/friction deceleration
+        p.vx *= 0.94;
+        p.vy *= 0.94;
+
+        // Apply gravity (rising heat) and slight wind drift
+        p.vy += p.gravity;
+        p.vx += p.wind + (Math.random() - 0.5) * 0.15;
+
+        p.alpha -= p.decay;
+
+        if (p.alpha <= 0) {
+          activeParticles.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = p.colorBase + "1.0)";
+        ctx.fillStyle = p.colorBase + p.alpha.toFixed(2) + ")";
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      if (activeParticles.length > 0) {
+        animationFrameRef.current = requestAnimationFrame(tick);
+      }
+    };
+
+    tick();
+  };
+
+  const handleSubmitBallot = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (isExploding || isSubmitting) return;
+
+    // Trigger API call - showing spinner and loading animation on button
+    const success = await onSubmitVote();
+
+    if (success) {
+      setIsExploding(true);
+      setIsContainerShaking(true);
+
+      const btn = buttonRef.current;
+      const container = containerRef.current;
+      if (btn && container) {
+        const btnRect = btn.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        const x = btnRect.left - containerRect.left + btnRect.width / 2;
+        const y = btnRect.top - containerRect.top + btnRect.height / 2;
+        startEmberExplosion(x, y);
+      } else {
+        startEmberExplosion(180, 520);
+      }
+
+      // Trigger transition to status screen after explosion finishes
+      setTimeout(() => {
+        onExplosionComplete();
+      }, 980);
+    } else {
+      // API call failed: keep button active. Shake the container to make it feel visceral
+      setIsContainerShaking(true);
+      setTimeout(() => {
+        setIsContainerShaking(false);
+      }, 500);
+    }
+  };
 
   if (!candidates || candidates.length === 0) {
     return (
@@ -34,16 +180,19 @@ export default function TinderCards({
   const isVoted = !!votedCandidates[activeCandidate.id];
 
   const handleNext = () => {
+    onClearError();
     setDirection("right");
     setCurrentIndex((prev) => (prev + 1) % candidates.length);
   };
 
   const handlePrev = () => {
+    onClearError();
     setDirection("left");
     setCurrentIndex((prev) => (prev - 1 + candidates.length) % candidates.length);
   };
 
   const handleToggleVote = () => {
+    onClearError();
     onMarkVote(activeCandidate.id, !isVoted);
   };
 
@@ -79,22 +228,23 @@ export default function TinderCards({
   };
 
   return (
-    <div className="flex flex-col items-center justify-between w-full flex-1 max-w-sm mx-auto z-10 relative overflow-hidden px-1">
-      
-      {/* Active State Shelf Header */}
-      <div className="w-full text-center py-2 px-3.5 rounded-xl glass-banner text-xs flex justify-between items-center mb-3 border border-white/10 bg-white/5">
-        <div className="flex items-center gap-1.5 text-orange-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
-          <span className="font-display font-semibold">Outfit Entry:</span>
-          <span className="text-white font-bold font-mono">
-            {currentIndex + 1} of {candidates.length}
-          </span>
-        </div>
-        <div className="flex items-center gap-1 bg-orange-500/10 text-amber-200 font-bold font-display px-2 py-0.5 rounded-full border border-orange-400/20">
-          <Sparkles className="w-3 h-3 text-orange-400" />
-          <span>{votedCandidate ? "1 Vote Set" : "0 Votes Set"}</span>
-        </div>
-      </div>
+    <motion.div
+      ref={containerRef}
+      animate={
+        isContainerShaking
+          ? {
+              x: [0, -6, 6, -5, 5, -3, 3, -1, 1, 0],
+              scale: [1, 1.02, 0.99, 1.01, 1],
+            }
+          : { x: 0, scale: 1 }
+      }
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="flex flex-col items-center justify-start gap-2 w-full flex-1 max-w-sm mx-auto z-10 relative overflow-hidden px-1"
+    >
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 pointer-events-none z-50 rounded-2xl"
+      />
 
       {/* Main Carousel Swipeable Card Window */}
       <div className="relative w-full aspect-[4/5] max-h-[350px] sm:max-h-[380px] flex items-center justify-center select-none overflow-hidden rounded-2xl bg-slate-950/20 border border-white/10 shadow-inner">
@@ -195,7 +345,7 @@ export default function TinderCards({
       </div>
 
       {/* Simplified Indicator Dots & Carousel Arrows */}
-      <div className="flex items-center justify-between w-full mt-3 px-1">
+      <div className="flex items-center justify-between w-full mt-2 px-1">
         <button
           onClick={handlePrev}
           className="p-2 border border-white/10 hover:border-orange-400/40 bg-white/5 text-orange-200 hover:text-white rounded-xl transition-all cursor-pointer shadow-md active:scale-95"
@@ -233,37 +383,32 @@ export default function TinderCards({
         </button>
       </div>
 
-      {/* Show active Choice Reminder if voted on a different card */}
-      <div className="w-full mt-2 text-center h-5">
-        {votedCandidate && votedCandidate.id !== activeCandidate.id ? (
-          <p className="text-[10px] text-emerald-300 font-sans tracking-wide">
-            ★ Currently selected: <span className="font-semibold text-white">{votedCandidate.name}</span>
-          </p>
-        ) : isVoted ? (
-          <p className="text-[10px] text-amber-300 font-sans tracking-wide">
-            ★ You are supporting this outfit entry!
-          </p>
-        ) : (
-          <p className="text-[10px] text-white/40 font-sans">
-            Swipe or use arrows to compare candidates
-          </p>
-        )}
-      </div>
-
       {/* Primary Final Submit Button Panel */}
-      <div className="w-full mt-2.5 pb-2">
+      <div className="w-full mt-2 pb-1 flex flex-col gap-2">
+        {submitError && (
+          <div className="text-center py-2 text-xs text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-xl px-3 flex items-center justify-center gap-1.5">
+            <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+            <span className="font-semibold text-left text-[11px] leading-tight text-rose-200">
+              {submitError} (Change choice or tap to retry)
+            </span>
+          </div>
+        )}
+
         {!votedCandidate ? (
           <div className="text-center py-2 text-xs text-orange-200/50 flex items-center justify-center gap-1.5 bg-slate-950/20 rounded-xl px-3 border border-dashed border-orange-400/10">
             <AlertCircle className="w-3.5 h-3.5 text-orange-400" />
             <span>Select one favorite outfit to submit</span>
           </div>
         ) : (
-          <button
-            onClick={onSubmitVote}
-            disabled={isSubmitting}
-            className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 font-display font-medium text-white text-base py-3 px-6 rounded-xl shadow-xl hover:shadow-orange-500/10 transform hover:-translate-y-0.5 transition-all text-center flex items-center justify-center gap-2 font-bold cursor-pointer relative overflow-hidden"
+          <motion.button
+            ref={buttonRef}
+            onClick={handleSubmitBallot}
+            disabled={isSubmitting || isExploding}
+            animate={isExploding ? { scale: 0, opacity: 0 } : { scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 350, damping: 25 }}
+            className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 font-display font-medium text-white text-base py-3 px-6 rounded-xl shadow-xl hover:shadow-orange-500/10 transition-all text-center flex items-center justify-center gap-2 font-bold cursor-pointer relative overflow-hidden disabled:opacity-80 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? (
+            {isSubmitting || isExploding ? (
               <>
                 <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -277,9 +422,9 @@ export default function TinderCards({
                 <span>Submit My Ballot</span>
               </>
             )}
-          </button>
+          </motion.button>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

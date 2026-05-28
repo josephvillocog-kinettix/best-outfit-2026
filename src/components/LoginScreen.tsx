@@ -211,7 +211,7 @@ export default function LoginScreen({ votersList, onLoginSuccess }: LoginScreenP
                 type="text"
                 value={voterIdInput}
                 onChange={(e) => setVoterIdInput(e.target.value)}
-                placeholder="e.g. A101"
+                placeholder="e.g. 288"
                 disabled={isExploding}
                 className="w-full bg-slate-900/60 border border-white/15 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 rounded-xl px-4 py-3 text-white placeholder-white/30 text-center tracking-widest font-mono text-lg transition-all focus:outline-none disabled:opacity-50"
               />
