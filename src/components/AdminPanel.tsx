@@ -222,6 +222,83 @@ export default function AdminPanel({
         </div>
       </div>
 
+      {/* Visual Image Grid Collage area of highest voted nominations */}
+      <div className="bg-slate-900/40 p-4 rounded-3xl border border-white/10 mb-5 text-left">
+        <div className="flex items-center gap-1.5 mb-3">
+          <Grid className="w-4 h-4 text-orange-400" />
+          <h3 className="text-xs font-display font-black tracking-wider text-amber-200 uppercase">
+            🏆 Nominations Visual Collage
+          </h3>
+        </div>
+
+        {/* Row of winners styled in grid format size proportionate to vote standing */}
+        {stats.list.filter((t) => t.votes > 0).length === 0 ? (
+          <div className="py-8 text-center text-white/30 border border-dashed border-white/10 rounded-2xl bg-slate-950/20 text-xs">
+            <AlertCircle className="w-5 h-5 mx-auto mb-1 text-orange-400" />
+            <span>Waiting for ballots to accumulate to show the collage.</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            {stats.list
+              .filter((t) => t.votes > 0)
+              .sort((a, b) => b.votes - a.votes)
+              .slice(0, 6) // limit to top 6 in collage
+              .map((item, index) => {
+                const percent = voteTallies.totalVotesCounted > 0 
+                  ? Math.round((item.votes / voteTallies.totalVotesCounted) * 100)
+                  : 0;
+                
+                return (
+                  <motion.div
+                    key={item.candidateId}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="relative aspect-video xs:aspect-[1.5] rounded-xl overflow-hidden border border-white/10 flex flex-col justify-end p-2.5 bg-slate-900 group shadow-lg"
+                  >
+                    {item.photoUrl ? (
+                      <img 
+                        src={item.photoUrl} 
+                        alt={item.candidateName}
+                        className="absolute inset-0 w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-orange-950/20 to-slate-950 flex items-center justify-center">
+                        <Sparkles className="w-5 h-5 text-orange-500/20" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/45 to-transparent pointer-events-none" />
+                    
+                    {/* Position icon and percentage badge */}
+                    <div className="absolute top-2 left-2 flex items-center gap-1 z-10">
+                      <span className="bg-amber-400 text-slate-950 font-black px-1.5 py-0.5 rounded text-[9px] leading-none shadow">
+                        #{index + 1}
+                      </span>
+                      {index === 0 && (
+                        <Crown className="w-3.5 h-3.5 text-amber-300 drop-shadow fill-amber-300" />
+                      )}
+                    </div>
+
+                    <div className="absolute top-2 right-2 z-10 bg-black/60 backdrop-blur-md text-[8px] font-mono text-emerald-300 border border-emerald-500/25 px-1.5 py-0.5 rounded-full">
+                      {item.votes} {item.votes === 1 ? 'vote' : 'votes'}
+                    </div>
+
+                    <div className="relative z-10 leading-none">
+                      <h4 className="font-display font-black text-[11px] text-white truncate drop-shadow">
+                        {item.candidateName}
+                      </h4>
+                      <p className="text-[9px] text-orange-200/80 mt-1 font-mono">
+                        {percent}% of overall votes
+                      </p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+          </div>
+        )}
+      </div>
+
       {/* Analytics Bento Grid layout */}
       <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 mb-4">
         {/* Total Turnout Card */}
@@ -307,83 +384,6 @@ export default function AdminPanel({
             <span className="text-[10px] italic text-white/30">No votes cast yet</span>
           )}
         </div>
-      </div>
-
-      {/* Visual Image Grid Collage area of highest voted nominations */}
-      <div className="bg-slate-900/40 p-4 rounded-3xl border border-white/10 mb-5 text-left">
-        <div className="flex items-center gap-1.5 mb-3">
-          <Grid className="w-4 h-4 text-orange-400" />
-          <h3 className="text-xs font-display font-black tracking-wider text-amber-200 uppercase">
-            🏆 Nominations Visual Collage
-          </h3>
-        </div>
-
-        {/* Row of winners styled in grid format size proportionate to vote standing */}
-        {stats.list.filter((t) => t.votes > 0).length === 0 ? (
-          <div className="py-8 text-center text-white/30 border border-dashed border-white/10 rounded-2xl bg-slate-950/20 text-xs">
-            <AlertCircle className="w-5 h-5 mx-auto mb-1 text-orange-400" />
-            <span>Waiting for ballots to accumulate to show the collage.</span>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-            {stats.list
-              .filter((t) => t.votes > 0)
-              .sort((a, b) => b.votes - a.votes)
-              .slice(0, 6) // limit to top 6 in collage
-              .map((item, index) => {
-                const percent = voteTallies.totalVotesCounted > 0 
-                  ? Math.round((item.votes / voteTallies.totalVotesCounted) * 100)
-                  : 0;
-                
-                return (
-                  <motion.div
-                    key={item.candidateId}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="relative aspect-video xs:aspect-[1.5] rounded-xl overflow-hidden border border-white/10 flex flex-col justify-end p-2.5 bg-slate-900 group shadow-lg"
-                  >
-                    {item.photoUrl ? (
-                      <img 
-                        src={item.photoUrl} 
-                        alt={item.candidateName}
-                        className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-500"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-orange-950/20 to-slate-950 flex items-center justify-center">
-                        <Sparkles className="w-5 h-5 text-orange-500/20" />
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/45 to-transparent pointer-events-none" />
-                    
-                    {/* Position icon and percentage badge */}
-                    <div className="absolute top-2 left-2 flex items-center gap-1 z-10">
-                      <span className="bg-amber-400 text-slate-950 font-black px-1.5 py-0.5 rounded text-[9px] leading-none shadow">
-                        #{index + 1}
-                      </span>
-                      {index === 0 && (
-                        <Crown className="w-3.5 h-3.5 text-amber-300 drop-shadow fill-amber-300" />
-                      )}
-                    </div>
-
-                    <div className="absolute top-2 right-2 z-10 bg-black/60 backdrop-blur-md text-[8px] font-mono text-emerald-300 border border-emerald-500/25 px-1.5 py-0.5 rounded-full">
-                      {item.votes} {item.votes === 1 ? 'vote' : 'votes'}
-                    </div>
-
-                    <div className="relative z-10 leading-none">
-                      <h4 className="font-display font-black text-[11px] text-white truncate drop-shadow">
-                        {item.candidateName}
-                      </h4>
-                      <p className="text-[9px] text-orange-200/80 mt-1 font-mono">
-                        {percent}% of overall votes
-                      </p>
-                    </div>
-                  </motion.div>
-                );
-              })}
-          </div>
-        )}
       </div>
 
       {/* Main split sections: Leaderboard VS Voters Audit log */}
