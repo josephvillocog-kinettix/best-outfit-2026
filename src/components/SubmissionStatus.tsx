@@ -63,7 +63,6 @@ export default function SubmissionStatus({
                   />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold truncate text-white">{cand.name}</div>
-                    <div className="text-[10px] text-emerald-400 font-mono">ID: {cand.id}</div>
                   </div>
                   <div className="bg-emerald-500/10 border border-emerald-400/25 text-emerald-300 rounded-full p-1.5 flex items-center justify-center">
                     <Heart className="w-3.5 h-3.5 fill-emerald-300 text-emerald-300" />
