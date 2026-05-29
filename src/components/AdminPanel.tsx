@@ -336,7 +336,7 @@ export default function AdminPanel({
                 <img 
                   src={stats.topFemale.photoUrl} 
                   alt={stats.topFemale.candidateName}
-                  className="w-10 h-10 object-cover rounded-lg border border-white/20"
+                  className="w-10 h-10 object-contain rounded-lg border border-white/20"
                 />
               )}
               <div className="min-w-0">
@@ -368,7 +368,7 @@ export default function AdminPanel({
                 <img 
                   src={stats.topMale.photoUrl} 
                   alt={stats.topMale.candidateName}
-                  className="w-10 h-10 object-cover rounded-lg border border-white/20"
+                  className="w-10 h-10 object-contain rounded-lg border border-white/20"
                 />
               )}
               <div className="min-w-0">
@@ -452,7 +452,7 @@ export default function AdminPanel({
                       <img 
                         src={cand.photoUrl} 
                         alt={cand.candidateName}
-                        className="w-10 h-10 object-cover rounded-lg border border-white/10"
+                        className="w-10 h-10 object-contain rounded-lg border border-white/10"
                         referrerPolicy="no-referrer"
                       />
                     )}

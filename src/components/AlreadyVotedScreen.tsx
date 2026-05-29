@@ -72,7 +72,7 @@ export default function AlreadyVotedScreen({
                       <img
                         src={cand.photoUrl}
                         alt={cand.name}
-                        className="w-12 h-12 object-cover rounded-xl border border-white/20 shadow-md"
+                        className="w-12 h-12 object-contain rounded-xl border border-white/20 shadow-md"
                         referrerPolicy="no-referrer"
                       />
                       <div className="flex-1 min-w-0">

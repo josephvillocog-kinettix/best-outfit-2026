@@ -200,24 +200,23 @@ export default function App() {
     const candidateId = votedIds.join(", ");
     const candidateName = votedList.join(", ");
 
-    try {
+    const payloadBody = {
+      id: activeVoter.id,           // voter's id
+      name: candidateName,          // candidate's name
+      candidateId,                  // explicit candidate id
+      candidateName,                // explicit candidate name
+      voterId: activeVoter.id,      // voter's id
+      voterName: activeVoter.name,  // voter's name
+      votedList,
+    };
+
+    const attemptVoteRequest = async (): Promise<any> => {
       console.log("Posting ballot selections to server API `/api/vote`...", {
         voterId: activeVoter.id,
         voterName: activeVoter.name,
         candidateId,
         candidateName,
       });
-
-      // Pass the voter's ID as 'id' and the candidate's name as 'name' parameters in json format as requested.
-      const payloadBody = {
-        id: activeVoter.id,           // voter's id
-        name: candidateName,          // candidate's name
-        candidateId,                  // explicit candidate id
-        candidateName,                // explicit candidate name
-        voterId: activeVoter.id,      // voter's id
-        voterName: activeVoter.name,  // voter's name
-        votedList,
-      };
 
       const res = await fetch("/api/vote", {
         method: "POST",
@@ -230,9 +229,40 @@ export default function App() {
       const result = await res.json();
       console.log("Post submission server result:", result);
 
-      const completedVoteValue = candidateName || candidateId;
-
       if (res.ok && result.success) {
+        return result;
+      } else {
+        const errMsg = result?.data || result?.error || "The server/script rejected the submission. Ensure your ID key is registered.";
+        throw new Error(errMsg);
+      }
+    };
+
+    // Attempt 1
+    try {
+      const result = await attemptVoteRequest();
+      
+      const completedVoteValue = candidateName || candidateId;
+      setSubmitMessage(result.data || "Vote registered successfully!");
+      if (completedVoteValue) {
+        setActiveVoter((prev) => (prev ? { ...prev, vote: completedVoteValue } : null));
+        setVoters((prevList) =>
+          prevList.map((v) =>
+            v.id === activeVoter.id ? { ...v, vote: completedVoteValue } : v
+          )
+        );
+      }
+      return true;
+    } catch (firstErr: any) {
+      console.warn("First submit attempt failed, retrying one more time...", firstErr);
+      
+      // Brief pause of 1 second before retry to ensure connection stability or rate recovery
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Attempt 2
+      try {
+        const result = await attemptVoteRequest();
+        
+        const completedVoteValue = candidateName || candidateId;
         setSubmitMessage(result.data || "Vote registered successfully!");
         if (completedVoteValue) {
           setActiveVoter((prev) => (prev ? { ...prev, vote: completedVoteValue } : null));
@@ -243,15 +273,11 @@ export default function App() {
           );
         }
         return true;
-      } else {
-        // If the server rejected it or did not succeed
-        const errMsg = result.data || result.error || "The server/script rejected the submission. Ensure your ID key is registered.";
-        throw new Error(errMsg);
+      } catch (secondErr: any) {
+        console.error("Second submit attempt also failed.", secondErr);
+        setSubmitError(secondErr.message || "Failed to submit ballot due to network/server issue.");
+        return false;
       }
-    } catch (err: any) {
-      console.error("Ballot posting failed", err);
-      setSubmitError(err.message || "Failed to submit ballot due to network/server issue.");
-      return false;
     } finally {
       setIsSubmitting(false);
     }
