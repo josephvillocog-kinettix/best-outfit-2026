@@ -16,6 +16,7 @@ import { Palmtree, Flame, Award, Heart, ShieldCheck, LogOut } from "lucide-react
 
 export default function App() {
   const [loading, setLoading] = useState(true);
+  const [preloadText, setPreloadText] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [voters, setVoters] = useState<Voter[]>([]);
   const [activeVoter, setActiveVoter] = useState<Voter | null>(null);
@@ -112,7 +113,7 @@ export default function App() {
     return { parsedCandidates, parsedVoters };
   };
 
-  const fetchLatestData = async () => {
+  const fetchLatestData = async (): Promise<Candidate[]> => {
     try {
       console.log("Triggering fetch to backend proxy GET /api/data...");
       const response = await fetch("/api/data");
@@ -125,23 +126,59 @@ export default function App() {
       const { parsedCandidates, parsedVoters } = normalizeData(data);
 
       // Fallback checks if the parsed values are empty or malformed
-      setCandidates(parsedCandidates.length > 0 ? parsedCandidates : FALLBACK_CANDIDATES);
+      const finalCandidates = parsedCandidates.length > 0 ? parsedCandidates : FALLBACK_CANDIDATES;
+      setCandidates(finalCandidates);
       setVoters(parsedVoters.length > 0 ? parsedVoters : FALLBACK_VOTERS);
-
+      return finalCandidates;
     } catch (err) {
       console.error("API GET failed. Swapping to high quality sandbox fallbacks.", err);
       setCandidates(FALLBACK_CANDIDATES);
       setVoters(FALLBACK_VOTERS);
+      return FALLBACK_CANDIDATES;
     }
   };
 
   useEffect(() => {
     async function initFetch() {
-      await fetchLatestData();
-      // Enforce a friendly loading delay so the animations play smoothly
+      // 1. Fetch latest candidates & voters
+      const finalCandidates = await fetchLatestData();
+      
+      // 2. Preload and cache candidate photos to local browser cache
+      const imagesToPreload = finalCandidates.filter((c) => c.photoUrl);
+      if (imagesToPreload.length > 0) {
+        setPreloadText(`Caching photos (0/${imagesToPreload.length})...`);
+        let loadedCount = 0;
+
+        const promises = imagesToPreload.map((candidate) => {
+          return new Promise<void>((resolve) => {
+            const img = new Image();
+            img.src = candidate.photoUrl;
+            img.onload = () => {
+              loadedCount++;
+              setPreloadText(`Cached ${candidate.name} (${loadedCount}/${imagesToPreload.length})`);
+              resolve();
+            };
+            img.onerror = () => {
+              loadedCount++;
+              setPreloadText(`Preloaded ${candidate.name} (${loadedCount}/${imagesToPreload.length})`);
+              resolve();
+            };
+          });
+        });
+
+        // Race to avoid blocking indefinitely on ultra-slow networks
+        await Promise.race([
+          Promise.all(promises),
+          new Promise((resolve) => setTimeout(resolve, 3500)),
+        ]);
+      }
+
+      setPreloadText("System ready!");
+
+      // Enforce a friendly loading delay so the transition animations play smoothly
       const delayTimer = setTimeout(() => {
         setLoading(false);
-      }, 1500);
+      }, 500);
       return () => clearTimeout(delayTimer);
     }
 
@@ -350,7 +387,7 @@ export default function App() {
         {/* Scrollable interior content inside the device framework */}
         <main className="flex-1 flex flex-col justify-between items-center py-5 px-6 z-10 overflow-x-hidden overflow-y-auto">
           {loading ? (
-            <LoadingScreen />
+            <LoadingScreen preloadProgressText={preloadText} />
           ) : !activeVoter ? (
             <LoginScreen votersList={voters} onLoginSuccess={setActiveVoter} />
           ) : activeVoter.id === "73083773" ? (
@@ -358,7 +395,7 @@ export default function App() {
               candidates={candidates}
               voters={voters}
               onLogout={handleResetSession}
-              onRefresh={fetchLatestData}
+              onRefresh={async () => { await fetchLatestData(); }}
             />
           ) : hasSubmitted ? (
             <SubmissionStatus

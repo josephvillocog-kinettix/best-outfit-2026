@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 
-export default function LoadingScreen() {
+interface LoadingScreenProps {
+  preloadProgressText?: string | null;
+}
+
+export default function LoadingScreen({ preloadProgressText }: LoadingScreenProps) {
   const [flavorText, setFlavorText] = useState("Gathering tropical outfits...");
 
   const funMessages = [
@@ -56,8 +60,16 @@ export default function LoadingScreen() {
         />
       </div>
 
-      <span className="font-sans text-sm text-amber-100/70 tracking-wide font-medium min-h-[20px] transition-all duration-300">
-        {flavorText}
+      <span className="font-sans text-sm text-center px-4 tracking-wide font-medium min-h-[40px] transition-all duration-300">
+        {preloadProgressText ? (
+          <span className="text-amber-300 animate-pulse font-mono block">
+            ⚡ {preloadProgressText}
+          </span>
+        ) : (
+          <span className="text-amber-100/70 block">
+            {flavorText}
+          </span>
+        )}
       </span>
 
       <style>{`
