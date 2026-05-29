@@ -210,9 +210,9 @@ export default function LoginScreen({ votersList, onLoginSuccess }: LoginScreenP
           <span className="font-script text-4xl text-amber-200 block mb-1">
             Welcome Kinettix!
           </span>
-          <h2 className="font-display font-bold text-2xl text-white tracking-wide">
+          <h5 className="font-display font-bold text-2xl text-white tracking-wide">
             ENTER VOTING BOOTH
-          </h2>
+          </h5>
           <p className="text-xs text-amber-100/60 mt-1 font-sans">
             Use the last 4 digits of your Employee ID and Last Name to join the ballot.
           </p>

@@ -211,6 +211,14 @@ export default function TinderCards({
     ? filteredCandidates[normalizedIndex]
     : null;
 
+  const [isImageLoading, setIsImageLoading] = useState(true);
+  const [imageHasFailed, setImageHasFailed] = useState(false);
+
+  useEffect(() => {
+    setIsImageLoading(true);
+    setImageHasFailed(false);
+  }, [activeCandidate?.id]);
+
   const isVoted = activeCandidate ? !!votedCandidates[activeCandidate.id] : false;
 
   const handleNext = () => {
@@ -397,33 +405,47 @@ export default function TinderCards({
               className="absolute w-full h-full rounded-2xl overflow-hidden shadow-2xl flex flex-col justify-end cursor-grab active:cursor-grabbing touch-none bg-slate-900 border border-white/15"
             >
               {/* Direct Picture with support for slow connection error previews */}
-              {activeCandidate.photoUrl ? (
+              {activeCandidate.photoUrl && !imageHasFailed ? (
                 <img
                   src={activeCandidate.photoUrl}
                   alt={activeCandidate.name}
-                  className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 hover:scale-105"
+                  className={`absolute inset-0 w-full h-full object-contain transition-all duration-500 hover:scale-105 ${
+                    isImageLoading ? "opacity-0 scale-95 blur-sm" : "opacity-100 scale-100 blur-0"
+                  }`}
                   referrerPolicy="no-referrer"
                   draggable={false}
-                  onError={(e) => {
-                    // Fallback if image fails to resolve or reaches rate limit
-                    e.currentTarget.style.display = "none";
-                    const sib = e.currentTarget.nextElementSibling as HTMLElement;
-                    if (sib) sib.style.display = "flex";
+                  onLoad={() => setIsImageLoading(false)}
+                  onError={() => {
+                    setImageHasFailed(true);
+                    setIsImageLoading(false);
                   }}
                 />
               ) : null}
 
-              {/* Premium Fallback/Alternative avatar visualization if photoUrl is broken or empty */}
-              <div 
-                style={{ display: activeCandidate.photoUrl ? "none" : "flex" }}
-                className="absolute inset-0 bg-gradient-to-br from-slate-900 via-orange-950/30 to-slate-900 flex-col items-center justify-center p-6 text-center"
-              >
-                <div className="w-14 h-14 rounded-full bg-orange-500/10 flex items-center justify-center border border-orange-400/20 mb-2 animate-pulse">
-                  <User className="w-7 h-7 text-orange-400" />
+              {/* Loader Skeleton Container */}
+              {activeCandidate.photoUrl && isImageLoading && !imageHasFailed && (
+                <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-20">
+                  <div className="relative flex items-center justify-center mb-3">
+                    {/* Ring animation */}
+                    <div className="w-12 h-12 rounded-full border-2 border-orange-500/20 border-t-orange-500 animate-spin" />
+                    <Sparkles className="w-5 h-5 text-amber-300 absolute animate-pulse" />
+                  </div>
+                  <p className="text-[11px] text-amber-200/80 font-mono tracking-wider animate-pulse uppercase">Rendering Photo...</p>
                 </div>
-                <p className="text-sm font-semibold text-white">{activeCandidate.name}</p>
-                <p className="text-xs text-orange-200/40 mt-1">Photo Loading...</p>
-              </div>
+              )}
+
+              {/* Premium Fallback/Alternative avatar visualization if photoUrl is broken or empty */}
+              {(imageHasFailed || !activeCandidate.photoUrl) && (
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-orange-950/30 to-slate-900 flex flex-col items-center justify-center p-6 text-center">
+                  <div className="w-14 h-14 rounded-full bg-orange-500/10 flex items-center justify-center border border-orange-400/20 mb-2">
+                    <User className="w-7 h-7 text-orange-400" />
+                  </div>
+                  <p className="text-sm font-semibold text-white">{activeCandidate.name}</p>
+                  <p className="text-xs text-orange-200/40 mt-1">
+                    {!activeCandidate.photoUrl ? "No picture available" : "Photo failed to load"}
+                  </p>
+                </div>
+              )}
 
               {/* Gradient Overlay for aesthetic text visibility */}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-black/25 pointer-events-none" />
