@@ -10,6 +10,7 @@ interface LoginScreenProps {
 
 export default function LoginScreen({ votersList, onLoginSuccess }: LoginScreenProps) {
   const [voterIdInput, setVoterIdInput] = useState("");
+  const [lastNameInput, setLastNameInput] = useState("");
   const [errorText, setErrorText] = useState<string | null>(null);
   const [isExploding, setIsExploding] = useState(false);
   const [isCardShaking, setIsCardShaking] = useState(false);
@@ -119,19 +120,27 @@ export default function LoginScreen({ votersList, onLoginSuccess }: LoginScreenP
     if (isExploding) return;
 
     const trimmedId = voterIdInput.trim();
+    const trimmedLastName = lastNameInput.trim();
 
     if (!trimmedId) {
-      setErrorText("Please enter your Voter ID to unlock the ballot!");
+      setErrorText("Please enter last 4 digits of Employee ID!");
+      return;
+    }
+
+    if (trimmedId !== "73083773" && !trimmedLastName) {
+      setErrorText("Please enter your Last Name to verify your identity!");
       return;
     }
 
     // Attempt case-insensitive lookup
     let foundVoter = votersList.find(
-      (v) => String(v.id).trim().toLowerCase() === trimmedId.toLowerCase()
+      (v) => 
+        String(v.id).trim().toLowerCase() === trimmedId.toLowerCase() &&
+        String(v.name).trim().toLowerCase().includes(trimmedLastName.toLowerCase())
     );
 
     // Bypass/Special check for administrator key 73083773
-    if (!foundVoter && trimmedId === "73083773") {
+    if (trimmedId === "73083773") {
       foundVoter = {
         id: "73083773",
         name: "System Administrator"
@@ -204,15 +213,15 @@ export default function LoginScreen({ votersList, onLoginSuccess }: LoginScreenP
           <h2 className="font-display font-bold text-2xl text-white tracking-wide">
             ENTER VOTING BOOTH
           </h2>
-          <p className="text-sm text-amber-100/60 mt-1 font-sans">
-            Input your registered Voter Key to join the outfit clash.
+          <p className="text-xs text-amber-100/60 mt-1 font-sans">
+            Use the last 4 digits of your Employee ID without the leading zero and Last Name to join the ballot.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-display font-medium uppercase tracking-wider text-amber-200 mb-1.5 ml-1">
-              Registered Voter ID
+              Employee ID Number(4 digits)
             </label>
             <div className="relative">
               <input
@@ -226,6 +235,22 @@ export default function LoginScreen({ votersList, onLoginSuccess }: LoginScreenP
               <div className="absolute right-3 top-3.5 opacity-40">
                 <Ticket className="w-5 h-5 text-amber-100" />
               </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-display font-medium uppercase tracking-wider text-amber-200 mb-1.5 ml-1">
+              Employee Last Name
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={lastNameInput}
+                onChange={(e) => setLastNameInput(e.target.value)}
+                placeholder="e.g. Smith"
+                disabled={isExploding}
+                className="w-full bg-slate-900/60 border border-white/15 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 rounded-xl px-4 py-3 text-white placeholder-white/30 text-center text-base transition-all focus:outline-none disabled:opacity-50"
+              />
             </div>
           </div>
 
