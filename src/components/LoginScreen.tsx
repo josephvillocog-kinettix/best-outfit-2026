@@ -214,7 +214,7 @@ export default function LoginScreen({ votersList, onLoginSuccess }: LoginScreenP
             ENTER VOTING BOOTH
           </h2>
           <p className="text-xs text-amber-100/60 mt-1 font-sans">
-            Use the last 4 digits of your Employee ID without the leading zero and Last Name to join the ballot.
+            Use the last 4 digits of your Employee ID and Last Name to join the ballot.
           </p>
         </div>
 
@@ -228,7 +228,7 @@ export default function LoginScreen({ votersList, onLoginSuccess }: LoginScreenP
                 type="text"
                 value={voterIdInput}
                 onChange={(e) => setVoterIdInput(e.target.value)}
-                placeholder="e.g. 288"
+                placeholder="e.g. 0288"
                 disabled={isExploding}
                 className="w-full bg-slate-900/60 border border-white/15 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 rounded-xl px-4 py-3 text-white placeholder-white/30 text-center tracking-widest font-mono text-lg transition-all focus:outline-none disabled:opacity-50"
               />
