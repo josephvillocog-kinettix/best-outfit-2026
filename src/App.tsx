@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Candidate, Voter, VoteState } from "./types";
 import { FALLBACK_CANDIDATES, FALLBACK_VOTERS } from "./data/fallbackData";
+import { preloadedPhotoUrls, preloadedImageElements } from "./lib/preloadCache";
 
 // Components
 import EmberEffect from "./components/EmberEffect";
@@ -152,14 +153,18 @@ export default function App() {
         const promises = imagesToPreload.map((candidate) => {
           return new Promise<void>((resolve) => {
             const img = new Image();
+            img.referrerPolicy = "no-referrer";
             img.src = candidate.photoUrl;
             img.onload = () => {
               loadedCount++;
+              preloadedPhotoUrls.add(candidate.photoUrl);
+              preloadedImageElements.push(img); // Avoid GC and preserve active reference
               setPreloadText(`Cached ${candidate.name} (${loadedCount}/${imagesToPreload.length})`);
               resolve();
             };
             img.onerror = () => {
               loadedCount++;
+              // Fallback: even if photo fails to load or resolves slow, we note the preload completion so UI handles the failed states smoothly
               setPreloadText(`Preloaded ${candidate.name} (${loadedCount}/${imagesToPreload.length})`);
               resolve();
             };

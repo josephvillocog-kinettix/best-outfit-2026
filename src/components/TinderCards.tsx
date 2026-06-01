@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Candidate } from "../types";
 import { Heart, Check, Sparkles, AlertCircle, ChevronLeft, ChevronRight, User } from "lucide-react";
+import { preloadedPhotoUrls } from "../lib/preloadCache";
 
 interface TinderCardsProps {
   candidates: Candidate[];
@@ -211,13 +212,22 @@ export default function TinderCards({
     ? filteredCandidates[normalizedIndex]
     : null;
 
-  const [isImageLoading, setIsImageLoading] = useState(true);
+  const [isImageLoading, setIsImageLoading] = useState(() => {
+    if (activeCandidate?.photoUrl && preloadedPhotoUrls.has(activeCandidate.photoUrl)) {
+      return false;
+    }
+    return true;
+  });
   const [imageHasFailed, setImageHasFailed] = useState(false);
 
   useEffect(() => {
-    setIsImageLoading(true);
+    if (activeCandidate?.photoUrl && preloadedPhotoUrls.has(activeCandidate.photoUrl)) {
+      setIsImageLoading(false);
+    } else {
+      setIsImageLoading(true);
+    }
     setImageHasFailed(false);
-  }, [activeCandidate?.id]);
+  }, [activeCandidate?.id, activeCandidate?.photoUrl]);
 
   const isVoted = activeCandidate ? !!votedCandidates[activeCandidate.id] : false;
 
@@ -414,7 +424,12 @@ export default function TinderCards({
                   }`}
                   referrerPolicy="no-referrer"
                   draggable={false}
-                  onLoad={() => setIsImageLoading(false)}
+                  onLoad={() => {
+                    setIsImageLoading(false);
+                    if (activeCandidate.photoUrl) {
+                      preloadedPhotoUrls.add(activeCandidate.photoUrl);
+                    }
+                  }}
                   onError={() => {
                     setImageHasFailed(true);
                     setIsImageLoading(false);
