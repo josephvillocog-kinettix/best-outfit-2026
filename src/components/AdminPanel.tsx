@@ -397,9 +397,6 @@ export default function AdminPanel({
                       <h4 className="font-display font-black text-[11px] text-white truncate drop-shadow">
                         {item.candidateName}
                       </h4>
-                      <p className="text-[9px] text-orange-200/80 mt-1 font-mono">
-                        {percent}% of overall votes
-                      </p>
                     </div>
                   </motion.div>
                 );
