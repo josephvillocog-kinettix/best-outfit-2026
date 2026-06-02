@@ -55,12 +55,20 @@ export default function SubmissionStatus({
                   key={cand.id} 
                   className="flex items-center gap-3 bg-white/5 p-2 rounded-xl border border-white/5 hover:border-white/10 transition-all"
                 >
-                  <img
-                    src={cand.photoUrl}
-                    alt={cand.name}
-                    className="w-10 h-10 object-contain rounded-lg border border-white/20"
-                    referrerPolicy="no-referrer"
-                  />
+                  {cand.photoUrl ? (
+                    <img
+                      src={cand.photoUrl}
+                      alt={cand.name}
+                      className="w-10 h-10 object-contain rounded-lg border border-white/20"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center border border-orange-400/20 shrink-0 shadow-md">
+                      <span className="font-display font-medium text-amber-300 text-xs">
+                        {cand.name.charAt(0)}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold truncate text-white">{cand.name}</div>
                   </div>

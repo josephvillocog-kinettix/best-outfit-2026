@@ -224,6 +224,77 @@ export default function AdminPanel({
 
       {/* Visual Image Grid Collage area of highest voted nominations */}
       <div className="bg-slate-900/40 p-4 rounded-3xl border border-white/10 mb-5 text-left">
+        {/* Top Female Winner summary card */}
+        <div className="bg-slate-900/50 p-3.5 rounded-2xl border border-white/5 flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-1 bg-rose-500/10 border-b border-l border-white/5 text-[9px] text-rose-300 font-display font-bold uppercase rounded-bl-lg">
+            Female Leader (F)
+          </div>
+          <div className="flex items-center justify-between opacity-80 mb-1">
+            <span className="text-[10px] text-orange-200/60 font-display font-bold tracking-wider uppercase">Female Category</span>
+            <Crown className="w-4 h-4 text-amber-400" />
+          </div>
+          {stats.topFemale ? (
+            <div className="flex items-center gap-2.5 mt-1.5">
+              {stats.topFemale.photoUrl && (
+                <img 
+                  src={stats.topFemale.photoUrl} 
+                  alt={stats.topFemale.candidateName}
+                  className="w-10 h-10 object-contain rounded-lg border border-white/20"
+                />
+              )}
+              <div className="min-w-0">
+                <div className="text-xs font-black truncate text-white leading-tight">
+                  {stats.topFemale.candidateName}
+                </div>
+                <div className="text-[10px] text-amber-300 font-mono mt-0.5">
+                  ★ {stats.topFemale.votes} {stats.topFemale.votes === 1 ? 'vote' : 'votes'}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <span className="text-[10px] italic text-white/30">No votes cast yet</span>
+          )}
+        </div>
+      </div>
+
+      {/* Visual Image Grid Collage area of highest voted nominations */}
+      <div className="bg-slate-900/40 p-4 rounded-3xl border border-white/10 mb-5 text-left">
+        {/* Top Male Winner summary card */}
+        <div className="bg-slate-900/50 p-3.5 rounded-2xl border border-white/5 flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-1 bg-amber-500/10 border-b border-l border-white/5 text-[9px] text-amber-300 font-display font-bold uppercase rounded-bl-lg">
+            Male Leader (M)
+          </div>
+          <div className="flex items-center justify-between opacity-80 mb-1">
+            <span className="text-[10px] text-orange-200/60 font-display font-bold tracking-wider uppercase">Male Category</span>
+            <Crown className="w-4 h-4 text-amber-400" />
+          </div>
+          {stats.topMale ? (
+            <div className="flex items-center gap-2.5 mt-1.5">
+              {stats.topMale.photoUrl && (
+                <img 
+                  src={stats.topMale.photoUrl} 
+                  alt={stats.topMale.candidateName}
+                  className="w-10 h-10 object-contain rounded-lg border border-white/20"
+                />
+              )}
+              <div className="min-w-0">
+                <div className="text-xs font-black truncate text-white leading-tight">
+                  {stats.topMale.candidateName}
+                </div>
+                <div className="text-[10px] text-amber-300 font-mono mt-0.5">
+                  ★ {stats.topMale.votes} {stats.topMale.votes === 1 ? 'vote' : 'votes'}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <span className="text-[10px] italic text-white/30">No votes cast yet</span>
+          )}
+        </div>
+      </div>
+
+
+      {/* Visual Image Grid Collage area of highest voted nominations */}
+      <div className="bg-slate-900/40 p-4 rounded-3xl border border-white/10 mb-5 text-left">
         <div className="flex items-center gap-1.5 mb-3">
           <Grid className="w-4 h-4 text-orange-400" />
           <h3 className="text-xs font-display font-black tracking-wider text-amber-200 uppercase">
@@ -319,70 +390,6 @@ export default function AdminPanel({
               <span className="text-[10px] font-mono text-amber-300 font-bold shrink-0">{stats.percentTurnout}%</span>
             </div>
           </div>
-        </div>
-
-        {/* Top Female Winner summary card */}
-        <div className="bg-slate-900/50 p-3.5 rounded-2xl border border-white/5 flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-1 bg-rose-500/10 border-b border-l border-white/5 text-[9px] text-rose-300 font-display font-bold uppercase rounded-bl-lg">
-            Female Leader (F)
-          </div>
-          <div className="flex items-center justify-between opacity-80 mb-1">
-            <span className="text-[10px] text-orange-200/60 font-display font-bold tracking-wider uppercase">F Category</span>
-            <Crown className="w-4 h-4 text-amber-400" />
-          </div>
-          {stats.topFemale ? (
-            <div className="flex items-center gap-2.5 mt-1.5">
-              {stats.topFemale.photoUrl && (
-                <img 
-                  src={stats.topFemale.photoUrl} 
-                  alt={stats.topFemale.candidateName}
-                  className="w-10 h-10 object-contain rounded-lg border border-white/20"
-                />
-              )}
-              <div className="min-w-0">
-                <div className="text-xs font-black truncate text-white leading-tight">
-                  {stats.topFemale.candidateName}
-                </div>
-                <div className="text-[10px] text-amber-300 font-mono mt-0.5">
-                  ★ {stats.topFemale.votes} {stats.topFemale.votes === 1 ? 'vote' : 'votes'}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <span className="text-[10px] italic text-white/30">No votes cast yet</span>
-          )}
-        </div>
-
-        {/* Top Male Winner summary card */}
-        <div className="bg-slate-900/50 p-3.5 rounded-2xl border border-white/5 flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-1 bg-amber-500/10 border-b border-l border-white/5 text-[9px] text-amber-300 font-display font-bold uppercase rounded-bl-lg">
-            Male Leader (M)
-          </div>
-          <div className="flex items-center justify-between opacity-80 mb-1">
-            <span className="text-[10px] text-orange-200/60 font-display font-bold tracking-wider uppercase">M Category</span>
-            <Crown className="w-4 h-4 text-amber-400" />
-          </div>
-          {stats.topMale ? (
-            <div className="flex items-center gap-2.5 mt-1.5">
-              {stats.topMale.photoUrl && (
-                <img 
-                  src={stats.topMale.photoUrl} 
-                  alt={stats.topMale.candidateName}
-                  className="w-10 h-10 object-contain rounded-lg border border-white/20"
-                />
-              )}
-              <div className="min-w-0">
-                <div className="text-xs font-black truncate text-white leading-tight">
-                  {stats.topMale.candidateName}
-                </div>
-                <div className="text-[10px] text-amber-300 font-mono mt-0.5">
-                  ★ {stats.topMale.votes} {stats.topMale.votes === 1 ? 'vote' : 'votes'}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <span className="text-[10px] italic text-white/30">No votes cast yet</span>
-          )}
         </div>
       </div>
 

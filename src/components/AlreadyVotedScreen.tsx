@@ -69,12 +69,20 @@ export default function AlreadyVotedScreen({
                   const cand = item as Candidate;
                   return (
                     <div key={cand.id} className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5 hover:border-white/10 transition-all">
-                      <img
-                        src={cand.photoUrl}
-                        alt={cand.name}
-                        className="w-12 h-12 object-contain rounded-xl border border-white/20 shadow-md"
-                        referrerPolicy="no-referrer"
-                      />
+                      {cand.photoUrl ? (
+                        <img
+                          src={cand.photoUrl}
+                          alt={cand.name}
+                          className="w-12 h-12 object-contain rounded-xl border border-white/20 shadow-md"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-400/20 shadow-md shrink-0">
+                          <span className="font-display font-medium text-amber-300 text-sm">
+                            {cand.name.charAt(0)}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-bold truncate text-white">
                           {cand.name}

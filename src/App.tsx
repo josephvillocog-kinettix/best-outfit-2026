@@ -11,6 +11,7 @@ import TinderCards from "./components/TinderCards";
 import SubmissionStatus from "./components/SubmissionStatus";
 import AlreadyVotedScreen from "./components/AlreadyVotedScreen";
 import AdminPanel from "./components/AdminPanel";
+import VotingClosedScreen from "./components/VotingClosedScreen";
 
 // Icons
 import { Palmtree, Flame, Award, Heart, ShieldCheck, LogOut } from "lucide-react";
@@ -21,6 +22,7 @@ export default function App() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [voters, setVoters] = useState<Voter[]>([]);
   const [activeVoter, setActiveVoter] = useState<Voter | null>(null);
+  const [votingClosed, setVotingClosed] = useState(false);
   
   // App states
   const [votedCandidates, setVotedCandidates] = useState<Record<string, boolean>>({});
@@ -101,7 +103,7 @@ export default function App() {
       }
 
       return { id, name, photoUrl, gender };
-    }).filter((c) => c.name && c.photoUrl); // ensure valid entry records
+    }).filter((c) => c.name); // ensure valid entry records
 
     // Safely map Voters
     const parsedVoters: Voter[] = rawVoters.map((v: any, index: number) => {
@@ -126,13 +128,27 @@ export default function App() {
       const data = await response.json();
       const { parsedCandidates, parsedVoters } = normalizeData(data);
 
-      // Fallback checks if the parsed values are empty or malformed
-      const finalCandidates = parsedCandidates.length > 0 ? parsedCandidates : FALLBACK_CANDIDATES;
-      setCandidates(finalCandidates);
+      const rawStatus = data ? (data.status ?? data.Status) : undefined;
+      
+      // Check status field. If false (string/bool), voting is closed.
+      let isClosedByAPI = false;
+      if (rawStatus === false || String(rawStatus).toLowerCase() === "false") {
+        isClosedByAPI = true;
+      }
+
+      console.log("Voting status evaluated:", {
+        rawStatus,
+        isClosedByAPI
+      });
+
+      setVotingClosed(isClosedByAPI);
+      setCandidates(parsedCandidates);
       setVoters(parsedVoters.length > 0 ? parsedVoters : FALLBACK_VOTERS);
-      return finalCandidates;
+      return parsedCandidates;
     } catch (err) {
-      console.error("API GET failed. Swapping to high quality sandbox fallbacks.", err);
+      console.error("API GET failed. Swapping to sandbox fallbacks.", err);
+      // In case of any network error, do not block the screen, fallback to active state sandbox
+      setVotingClosed(false);
       setCandidates(FALLBACK_CANDIDATES);
       setVoters(FALLBACK_VOTERS);
       return FALLBACK_CANDIDATES;
@@ -402,6 +418,8 @@ export default function App() {
               onLogout={handleResetSession}
               onRefresh={async () => { await fetchLatestData(); }}
             />
+          ) : votingClosed ? (
+            <VotingClosedScreen onLogout={handleResetSession} />
           ) : hasSubmitted ? (
             <SubmissionStatus
               voter={activeVoter}
