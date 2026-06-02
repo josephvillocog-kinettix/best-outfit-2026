@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Candidate, Voter } from "../types";
 import { motion, AnimatePresence } from "motion/react";
 import { 
@@ -36,10 +36,34 @@ export default function AdminPanel({
   const [voterFilter, setVoterFilter] = useState<"all" | "voted" | "pending">("all");
   const [categoryFilter, setCategoryFilter] = useState<"all" | "F" | "M">("all");
   const [activeLeaderboardTab, setActiveLeaderboardTab] = useState<"all" | "F" | "M" | "write-in">("all");
+  const [timeLeft, setTimeLeft] = useState(5.0);
+
+  // Auto-refresh timer loop - triggers onRefresh every 5 seconds
+  useEffect(() => {
+    let lastTick = Date.now();
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const delta = now - lastTick;
+      lastTick = now;
+
+      setTimeLeft((prev) => {
+        const next = prev - (delta / 1000);
+        if (next <= 0) {
+          // Trigger the auto refresh callback
+          onRefresh().catch((err) => console.error("Auto refresh error:", err));
+          return 5.0;
+        }
+        return next;
+      });
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [onRefresh]);
 
   const handleRefreshClick = async () => {
     if (isRefreshing) return;
     setIsRefreshing(true);
+    setTimeLeft(5.0); // Reset timer on manual refresh
     try {
       await onRefresh();
     } catch (err) {
@@ -189,14 +213,25 @@ export default function AdminPanel({
     <div className="w-full flex flex-col h-full text-white">
       
       {/* Mini Breadcrumb Admin bar */}
-      <div className="flex items-center justify-between mb-4 bg-orange-500/10 border border-orange-400/20 px-4 py-3 rounded-2xl">
+      <div className="relative overflow-hidden flex items-center justify-between mb-4 bg-orange-500/10 border border-orange-400/20 px-4 py-3.5 rounded-2xl">
+        {/* Auto-Refresh linear progress bar */}
+        <div 
+          className="absolute bottom-0 left-0 h-[3px] bg-gradient-to-r from-orange-500 via-amber-400 to-amber-300 transition-all duration-100 ease-linear shadow-[0_0_8px_rgba(245,158,11,0.5)]" 
+          style={{ width: `${(timeLeft / 5) * 100}%` }} 
+        />
+        
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-5 h-5 text-orange-400 shrink-0" />
           <div>
-            <span className="text-[10px] uppercase font-display tracking-widest text-amber-200 font-bold block leading-none">
-              Control Panel Secure
-            </span>
-            <span className="text-sm font-display font-medium text-white">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase font-display tracking-widest text-amber-200 font-bold block leading-none">
+                Control Panel Secure
+              </span>
+              <span className="text-[8px] uppercase tracking-wider font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded leading-none">
+                LIVE
+              </span>
+            </div>
+            <span className="text-xs sm:text-sm font-display font-medium text-white block mt-0.5">
               Role: System Administrator
             </span>
           </div>
@@ -206,10 +241,13 @@ export default function AdminPanel({
             onClick={handleRefreshClick}
             disabled={isRefreshing}
             className="p-2 bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 text-xs font-semibold disabled:opacity-50"
-            title="Refresh from sheet"
+            title={`Refresh from sheet. Auto-refreshing in ${timeLeft.toFixed(1)}s`}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-orange-400" : ""}`} />
             <span className="hidden xs:inline">Refresh Sheet</span>
+            <span className="text-[9px] px-1 bg-white/10 rounded font-mono text-amber-300">
+              {timeLeft.toFixed(1)}s
+            </span>
           </button>
           <button
             onClick={onLogout}
