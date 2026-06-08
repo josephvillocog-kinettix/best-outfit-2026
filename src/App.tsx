@@ -390,18 +390,15 @@ export default function App() {
         <header className="w-full text-center pt-8 pb-4 px-6 z-10 bg-white/5 border-b border-white/10 relative">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <Palmtree className="w-6 h-6 text-orange-400" />
               <h1 className="font-script text-3xl text-amber-200 tracking-wide drop-shadow-sm">
-                Summer Outing Best Outfit
+                Summer Ultimate Head-Turner
               </h1>
             </div>
-            
             <div className="flex items-center gap-1 bg-orange-500/10 border border-orange-400/20 px-2.5 py-1 rounded-full">
-              <Flame className="w-4 h-4 text-orange-400 animate-pulse" />
               <span className="text-[9px] uppercase font-display font-semibold text-amber-200 tracking-wider">
                 {activeVoter?.id === "73083773" ? "ADMIN" : "LIVE"}
               </span>
-            </div>
+            </div>            
           </div>
         </header>
 

@@ -1,6 +1,6 @@
 {
-  "name": "Best Outfit Voting",
-  "description": "A Hawaiian-themed mobile voting app with a tinder-style swipe layout to select the best outfit.",
+  "name": "Ultimate Head-turner Voting",
+  "description": "A Tiki-themed mobile voting app with a tinder-style swipe layout to select the ultimate head-turner.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

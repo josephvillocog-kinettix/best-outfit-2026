@@ -207,9 +207,6 @@ export default function LoginScreen({ votersList, onLoginSuccess }: LoginScreenP
         <div className="absolute -bottom-12 -left-12 w-28 h-28 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
 
         <div className="text-center mb-6">
-          <span className="font-script text-4xl text-amber-200 block mb-1">
-            Welcome Kinettix!
-          </span>
           <h5 className="font-display font-bold text-2xl text-white tracking-wide">
             ENTER VOTING BOOTH
           </h5>
@@ -221,7 +218,7 @@ export default function LoginScreen({ votersList, onLoginSuccess }: LoginScreenP
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-display font-medium uppercase tracking-wider text-amber-200 mb-1.5 ml-1">
-              Employee ID Number(4 digits)
+              Employee ID No.(Last 4 digits)
             </label>
             <div className="relative">
               <input
