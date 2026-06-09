@@ -391,7 +391,7 @@ export default function App() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <h1 className="font-script text-3xl text-amber-200 tracking-wide drop-shadow-sm">
-                Summer Ultimate Head-Turner
+                Ultimate Summer Head-Turner
               </h1>
             </div>
             <div className="flex items-center gap-1 bg-orange-500/10 border border-orange-400/20 px-2.5 py-1 rounded-full">
