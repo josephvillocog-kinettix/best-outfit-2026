@@ -260,151 +260,100 @@ export default function AdminPanel({
         </div>
       </div>
 
-      {/* Visual Image Grid Collage area of highest voted nominations */}
-      <div className="bg-slate-900/40 p-4 rounded-3xl border border-white/10 mb-5 text-left">
+      {/* Category Leaders Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+        
         {/* Top Female Winner summary card */}
-        <div className="bg-slate-900/50 p-3.5 rounded-2xl border border-white/5 flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-1 bg-rose-500/10 border-b border-l border-white/5 text-[9px] text-rose-300 font-display font-bold uppercase rounded-bl-lg">
+        <div className="bg-slate-900/40 p-4 rounded-3xl border border-white/10 text-left relative overflow-hidden flex flex-col justify-between min-h-[380px] sm:min-h-[420px]">
+          <div className="absolute top-0 right-0 p-1.5 bg-rose-500/10 border-b border-l border-white/5 text-[9px] text-rose-300 font-display font-bold uppercase rounded-bl-lg z-10">
             Female Leader (F)
           </div>
-          <div className="flex items-center justify-between opacity-80 mb-1">
+          <div className="flex items-center justify-between opacity-80 mb-3 z-10">
             <span className="text-[10px] text-orange-200/60 font-display font-bold tracking-wider uppercase">Female Category</span>
-            <Crown className="w-4 h-4 text-amber-400" />
+            <Crown className="w-5 h-5 text-rose-400" />
           </div>
           {stats.topFemale ? (
-            <div className="flex items-center gap-2.5 mt-1.5">
-              {stats.topFemale.photoUrl && (
-                <img 
-                  src={stats.topFemale.photoUrl} 
-                  alt={stats.topFemale.candidateName}
-                  className="w-10 h-10 object-contain rounded-lg border border-white/20"
-                />
-              )}
-              <div className="min-w-0">
-                <div className="text-xs font-black truncate text-white leading-tight">
-                  {stats.topFemale.candidateName}
-                </div>
-                <div className="text-[10px] text-amber-300 font-mono mt-0.5">
-                  ★ {stats.topFemale.votes} {stats.topFemale.votes === 1 ? 'vote' : 'votes'}
+            <div className="flex-1 flex flex-col justify-between h-full">
+              <div className="relative flex-1 flex items-center justify-center py-2 h-72 sm:h-80 overflow-hidden rounded-2xl bg-slate-950/25 border border-white/10 shadow-inner">
+                {stats.topFemale.photoUrl ? (
+                  <img 
+                    src={stats.topFemale.photoUrl} 
+                    alt={stats.topFemale.candidateName}
+                    className="w-full h-full max-h-72 sm:max-h-80 object-contain rounded-2xl p-1"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="w-full h-72 sm:h-80 rounded-2xl bg-rose-500/5 flex flex-col items-center justify-center border border-dashed border-rose-500/20 text-center p-4">
+                    <span className="text-xs text-white/40 italic">No picture available</span>
+                  </div>
+                )}
+                
+                {/* Elegant overlay badge holding name and votes */}
+                <div className="absolute bottom-0 inset-x-0 bg-slate-950/80 backdrop-blur-md px-3.5 py-2.5 border-t border-white/10 flex items-center justify-between gap-2 z-10">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-black truncate text-white leading-tight">
+                      {stats.topFemale.candidateName}
+                    </p>
+                  </div>
+                  <div className="shrink-0 bg-rose-500/25 border border-rose-400/40 px-2.5 py-1 rounded-lg text-[10px] sm:text-xs text-rose-300 font-mono font-bold flex items-center gap-1">
+                    ★ {stats.topFemale.votes} {stats.topFemale.votes === 1 ? 'vote' : 'votes'}
+                  </div>
                 </div>
               </div>
             </div>
           ) : (
-            <span className="text-[10px] italic text-white/30">No votes cast yet</span>
+            <div className="flex-1 flex items-center justify-center py-12">
+              <span className="text-xs text-white/30 italic">No votes cast yet</span>
+            </div>
           )}
         </div>
-      </div>
 
-      {/* Visual Image Grid Collage area of highest voted nominations */}
-      <div className="bg-slate-900/40 p-4 rounded-3xl border border-white/10 mb-5 text-left">
         {/* Top Male Winner summary card */}
-        <div className="bg-slate-900/50 p-3.5 rounded-2xl border border-white/5 flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-1 bg-amber-500/10 border-b border-l border-white/5 text-[9px] text-amber-300 font-display font-bold uppercase rounded-bl-lg">
+        <div className="bg-slate-900/40 p-4 rounded-3xl border border-white/10 text-left relative overflow-hidden flex flex-col justify-between min-h-[380px] sm:min-h-[420px]">
+          <div className="absolute top-0 right-0 p-1.5 bg-amber-500/10 border-b border-l border-white/5 text-[9px] text-amber-300 font-display font-bold uppercase rounded-bl-lg z-10">
             Male Leader (M)
           </div>
-          <div className="flex items-center justify-between opacity-80 mb-1">
+          <div className="flex items-center justify-between opacity-80 mb-3 z-10">
             <span className="text-[10px] text-orange-200/60 font-display font-bold tracking-wider uppercase">Male Category</span>
-            <Crown className="w-4 h-4 text-amber-400" />
+            <Crown className="w-5 h-5 text-amber-400" />
           </div>
           {stats.topMale ? (
-            <div className="flex items-center gap-2.5 mt-1.5">
-              {stats.topMale.photoUrl && (
-                <img 
-                  src={stats.topMale.photoUrl} 
-                  alt={stats.topMale.candidateName}
-                  className="w-10 h-10 object-contain rounded-lg border border-white/20"
-                />
-              )}
-              <div className="min-w-0">
-                <div className="text-xs font-black truncate text-white leading-tight">
-                  {stats.topMale.candidateName}
-                </div>
-                <div className="text-[10px] text-amber-300 font-mono mt-0.5">
-                  ★ {stats.topMale.votes} {stats.topMale.votes === 1 ? 'vote' : 'votes'}
+            <div className="flex-1 flex flex-col justify-between h-full">
+              <div className="relative flex-1 flex items-center justify-center py-2 h-72 sm:h-80 overflow-hidden rounded-2xl bg-slate-950/25 border border-white/10 shadow-inner">
+                {stats.topMale.photoUrl ? (
+                  <img 
+                    src={stats.topMale.photoUrl} 
+                    alt={stats.topMale.candidateName}
+                    className="w-full h-full max-h-72 sm:max-h-80 object-contain rounded-2xl p-1"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="w-full h-72 sm:h-80 rounded-2xl bg-slate-950/40 flex items-center justify-center border border-dashed border-white/10 text-xs text-white/30">
+                    No picture available
+                  </div>
+                )}
+                
+                {/* Elegant overlay badge holding name and votes */}
+                <div className="absolute bottom-0 inset-x-0 bg-slate-950/80 backdrop-blur-md px-3.5 py-2.5 border-t border-white/10 flex items-center justify-between gap-2 z-10">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-black truncate text-white leading-tight">
+                      {stats.topMale.candidateName}
+                    </p>
+                  </div>
+                  <div className="shrink-0 bg-amber-500/25 border border-amber-400/40 px-2.5 py-1 rounded-lg text-[10px] sm:text-xs text-amber-300 font-mono font-bold flex items-center gap-1">
+                    ★ {stats.topMale.votes} {stats.topMale.votes === 1 ? 'vote' : 'votes'}
+                  </div>
                 </div>
               </div>
             </div>
           ) : (
-            <span className="text-[10px] italic text-white/30">No votes cast yet</span>
+            <div className="flex-1 flex items-center justify-center py-12">
+              <span className="text-xs text-white/30 italic">No votes cast yet</span>
+            </div>
           )}
         </div>
+
       </div>
-
-
-      {/* Visual Image Grid Collage area of highest voted nominations */}
-      <div className="bg-slate-900/40 p-4 rounded-3xl border border-white/10 mb-5 text-left">
-        <div className="flex items-center gap-1.5 mb-3">
-          <Grid className="w-4 h-4 text-orange-400" />
-          <h3 className="text-xs font-display font-black tracking-wider text-amber-200 uppercase">
-            🏆 Nominations Visual Collage
-          </h3>
-        </div>
-
-        {/* Row of winners styled in grid format size proportionate to vote standing */}
-        {stats.list.filter((t) => t.votes > 0).length === 0 ? (
-          <div className="py-8 text-center text-white/30 border border-dashed border-white/10 rounded-2xl bg-slate-950/20 text-xs">
-            <AlertCircle className="w-5 h-5 mx-auto mb-1 text-orange-400" />
-            <span>Waiting for ballots to accumulate to show the collage.</span>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-            {stats.list
-              .filter((t) => t.votes > 0)
-              .sort((a, b) => b.votes - a.votes)
-              .slice(0, 6) // limit to top 6 in collage
-              .map((item, index) => {
-                const percent = voteTallies.totalVotesCounted > 0 
-                  ? Math.round((item.votes / voteTallies.totalVotesCounted) * 100)
-                  : 0;
-                
-                return (
-                  <motion.div
-                    key={item.candidateId}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="relative aspect-video xs:aspect-[1.5] rounded-xl overflow-hidden border border-white/10 flex flex-col justify-end p-2.5 bg-slate-900 group shadow-lg"
-                  >
-                    {item.photoUrl ? (
-                      <img 
-                        src={item.photoUrl} 
-                        alt={item.candidateName}
-                        className="absolute inset-0 w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-orange-950/20 to-slate-950 flex items-center justify-center">
-                        <Sparkles className="w-5 h-5 text-orange-500/20" />
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/45 to-transparent pointer-events-none" />
-                    
-                    {/* Position icon and percentage badge */}
-                    <div className="absolute top-2 left-2 flex items-center gap-1 z-10">
-                      <span className="bg-amber-400 text-slate-950 font-black px-1.5 py-0.5 rounded text-[9px] leading-none shadow">
-                        #{index + 1}
-                      </span>
-                      {index === 0 && (
-                        <Crown className="w-3.5 h-3.5 text-amber-300 drop-shadow fill-amber-300" />
-                      )}
-                    </div>
-
-                    <div className="absolute top-2 right-2 z-10 bg-black/60 backdrop-blur-md text-[8px] font-mono text-emerald-300 border border-emerald-500/25 px-1.5 py-0.5 rounded-full">
-                      {item.votes} {item.votes === 1 ? 'vote' : 'votes'}
-                    </div>
-
-                    <div className="relative z-10 leading-none">
-                      <h4 className="font-display font-black text-[11px] text-white truncate drop-shadow">
-                        {item.candidateName}
-                      </h4>
-                    </div>
-                  </motion.div>
-                );
-              })}
-          </div>
-        )}
-      </div>
-
       {/* Analytics Bento Grid layout */}
       <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 mb-4">
         {/* Total Turnout Card */}
@@ -527,6 +476,80 @@ export default function AdminPanel({
             )}
           </div>
         </div>
+
+      {/* Visual Image Grid Collage area of highest voted nominations */}
+      <div className="bg-slate-900/40 p-4 rounded-3xl border border-white/10 mb-5 text-left">
+        <div className="flex items-center gap-1.5 mb-3">
+          <Grid className="w-4 h-4 text-orange-400" />
+          <h3 className="text-xs font-display font-black tracking-wider text-amber-200 uppercase">
+            🏆 Nominations Visual Collage
+          </h3>
+        </div>
+
+        {/* Row of winners styled in grid format size proportionate to vote standing */}
+        {stats.list.filter((t) => t.votes > 0).length === 0 ? (
+          <div className="py-8 text-center text-white/30 border border-dashed border-white/10 rounded-2xl bg-slate-950/20 text-xs">
+            <AlertCircle className="w-5 h-5 mx-auto mb-1 text-orange-400" />
+            <span>Waiting for ballots to accumulate to show the collage.</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            {stats.list
+              .filter((t) => t.votes > 0)
+              .sort((a, b) => b.votes - a.votes)
+              .slice(0, 6) // limit to top 6 in collage
+              .map((item, index) => {
+                const percent = voteTallies.totalVotesCounted > 0 
+                  ? Math.round((item.votes / voteTallies.totalVotesCounted) * 100)
+                  : 0;
+                
+                return (
+                  <motion.div
+                    key={item.candidateId}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="relative aspect-video xs:aspect-[1.5] rounded-xl overflow-hidden border border-white/10 flex flex-col justify-end p-2.5 bg-slate-900 group shadow-lg"
+                  >
+                    {item.photoUrl ? (
+                      <img 
+                        src={item.photoUrl} 
+                        alt={item.candidateName}
+                        className="absolute inset-0 w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-orange-950/20 to-slate-950 flex items-center justify-center">
+                        <Sparkles className="w-5 h-5 text-orange-500/20" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/45 to-transparent pointer-events-none" />
+                    
+                    {/* Position icon and percentage badge */}
+                    <div className="absolute top-2 left-2 flex items-center gap-1 z-10">
+                      <span className="bg-amber-400 text-slate-950 font-black px-1.5 py-0.5 rounded text-[9px] leading-none shadow">
+                        #{index + 1}
+                      </span>
+                      {index === 0 && (
+                        <Crown className="w-3.5 h-3.5 text-amber-300 drop-shadow fill-amber-300" />
+                      )}
+                    </div>
+
+                    <div className="absolute top-2 right-2 z-10 bg-black/60 backdrop-blur-md text-[8px] font-mono text-emerald-300 border border-emerald-500/25 px-1.5 py-0.5 rounded-full">
+                      {item.votes} {item.votes === 1 ? 'vote' : 'votes'}
+                    </div>
+
+                    <div className="relative z-10 leading-none">
+                      <h4 className="font-display font-black text-[11px] text-white truncate drop-shadow">
+                        {item.candidateName}
+                      </h4>
+                    </div>
+                  </motion.div>
+                );
+              })}
+          </div>
+        )}
+      </div>
 
         {/* Voters Real-time Audit Table log */}
         <div className="bg-slate-900/50 rounded-2xl border border-white/5 p-4 text-left">
